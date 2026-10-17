@@ -13,7 +13,7 @@ Plataforma de agendamiento de tutorías académicas diseñada bajo los lineamien
 
 ## 🛠️ Stack Tecnológico
 * **Lenguaje:** Java 21
-* **Framework:** Spring Boot 3.x
+* **Framework:** Spring Boot 4.x
 * **Persistencia:** Spring Data JPA / Hibernate
 * **Base de Datos:** SQL Server
 * **Gestor de Dependencias:** Maven
