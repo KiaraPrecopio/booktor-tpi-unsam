@@ -43,10 +43,81 @@ La documentación del proyecto está en [`docs/`](docs/):
 * [Requisitos](docs/04-requisitos.md): requisitos funcionales y no funcionales.
 * [Modelo de datos](docs/05-modelo-datos.md): diagrama entidad-relación.
 
-## 🚀 Instalación y Ejecución
-1. Clonar el repositorio.
-2. Configurar la base de datos y las variables de entorno. *(Se completa con el issue #2.)*
-3. Ejecutar el proyecto con el wrapper de Maven: `.\mvnw spring-boot:run` (Windows) o `./mvnw spring-boot:run` (Linux/macOS).
+## 🚀 Instalación y Ejecución 
+#### Tomado de "Guia de instalación y configuración de SQL Server"
+
+#### Requisitos
+* Java 21.
+* SQL Server con autenticación mixta (SQL Server y Windows) y TCP/IP habilitado en el puerto 1433.
+* SQL Server Management Studio (SSMS).
+
+No hace falta instalar Maven: el proyecto trae el wrapper (`mvnw`).
+
+#### 1. Clonar el repositorio
+```bash
+git clone <url-del-repositorio>
+cd booktor-tpi-unsam
+```
+
+#### 2. Crear la base de datos, el login y los permisos
+En SSMS, abrir una conexión al servidor, presionar **New Query** y ejecutar los bloques en orden. Cada integrante elige el nombre y la contraseña de su login local.
+
+SQL Server separa el **login**, que permite entrar al servidor, del **usuario**, que define qué se puede hacer dentro de una base concreta.
+
+```sql
+-- Login a nivel servidor
+CREATE LOGIN booktor
+WITH PASSWORD = '<contraseña>',
+CHECK_POLICY = OFF,
+CHECK_EXPIRATION = OFF;
+GO
+
+-- Base de datos
+CREATE DATABASE booktor_db;
+GO
+
+-- Usuario dentro de la base, vinculado al login
+USE booktor_db;
+GO
+CREATE USER booktor FOR LOGIN booktor;
+GO
+
+-- Permisos sobre la base
+ALTER ROLE db_owner ADD MEMBER booktor;
+GO
+```
+
+* `CHECK_POLICY = OFF` y `CHECK_EXPIRATION = OFF` permiten una contraseña simple que no caduca. Solo son aceptables en una base local de desarrollo.
+* Sin `CREATE USER`, el login entra al servidor pero no puede abrir `booktor_db`.
+* `db_owner` hace falta porque Liquibase crea y modifica las tablas. En producción se darían solo los permisos necesarios.
+
+Para comprobar que el login está habilitado:
+```sql
+SELECT name, is_disabled, default_database_name
+FROM sys.sql_logins
+WHERE name = 'booktor';
+```
+`is_disabled` tiene que ser `0`. Que la base por defecto sea `master` es normal: la base se indica en la URL de conexión.
+
+#### 3. Configurar las variables de entorno
+Las credenciales no se guardan en el repositorio. Copiar `.env.example` como `.env` en la raíz del proyecto y completarlo con el login del paso anterior:
+```properties
+DB_URL=jdbc:sqlserver://localhost:1433;databaseName=booktor_db;encrypt=false;trustServerCertificate=true
+DB_USERNAME=booktor
+DB_PASSWORD=<contraseña>
+```
+`DB_URL` va en una sola línea, sin espacios. El `.env` está en el `.gitignore`.
+
+#### 4. Ejecutar
+```bash
+.\mvnw spring-boot:run    # Windows
+./mvnw spring-boot:run    # Linux/macOS
+```
+Al arrancar, Liquibase aplica los changesets pendientes. Las tablas no las crea Hibernate: `ddl-auto=validate` solo verifica que coincidan con las entidades.
+
+La primera vez, en `booktor_db > Tables` tienen que aparecer `DATABASECHANGELOG` y `DATABASECHANGELOGLOCK`.
+
+Para correr las pruebas: `.\mvnw test`.
 
 ## 🤝 Convenciones del equipo
 
@@ -75,4 +146,6 @@ Ejemplo: `feat: agregar alta de materias`.
 ### Código
 * Nombres de clases, métodos y variables en español (por ejemplo, `Turno`, `reservarTurno`). Los sufijos técnicos van en inglés (`TurnoService`, `TurnoController`).
 * El esquema de la base solo se cambia con un changeset nuevo de Liquibase. Un changeset ya aplicado no se edita.
+* El changelog maestro (`db/changelog/db.changelog-master.xml`) está en XML y solo incluye los changesets.
+* Los changesets se escriben en SQL (formato *formatted SQL* de Liquibase) dentro de `db/changelog/changes/`, numerados en orden: `001-crear-usuario.sql`, `002-...`. Cada archivo empieza con `--liquibase formatted sql`, y cada changeset con `--changeset <autor>:<id>`.
 * Ninguna credencial se sube al repositorio: van en el `.env`, que está en el `.gitignore`.
