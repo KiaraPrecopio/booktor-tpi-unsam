@@ -147,6 +147,7 @@ Ejemplo: `feat: agregar alta de materias`.
 * Nombres de clases, métodos y variables en español (por ejemplo, `Turno`, `reservarTurno`). Los sufijos técnicos van en inglés (`TurnoService`, `TurnoController`).
 * El esquema de la base solo se cambia con un changeset nuevo de Liquibase. Un changeset ya aplicado no se edita.
 * El changelog maestro (`db/changelog/db.changelog-master.xml`) está en XML y solo incluye los changesets.
-* Los changesets se escriben en SQL (formato *formatted SQL* de Liquibase) dentro de `db/changelog/changes/`, numerados en orden: `001-crear-usuario.sql`, `002-...`. Cada archivo empieza con `--liquibase formatted sql`, y cada changeset con `--changeset <autor>:<id>`.
+* Los changesets se escriben en SQL (formato *formatted SQL* de Liquibase) dentro de `db/changelog/changes/`, en archivos numerados en orden (`001-crear-usuario-y-admin.sql`, `002-...`). Un archivo puede tener varios changesets. Cada archivo empieza con `--liquibase formatted sql`, y cada changeset con `--changeset <autor>:<id>`.
+* Las tablas se nombran en singular y en minúscula, con guion bajo (`usuario`, `usuario_adaptacion`), igual que en el modelo de datos.
 * Ninguna credencial se sube al repositorio: van en el `.env`, que está en el `.gitignore`.
 * La hora actual se obtiene del bean Clock: LocalDateTime.now(clock), no LocalDateTime.now()
