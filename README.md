@@ -149,3 +149,4 @@ Ejemplo: `feat: agregar alta de materias`.
 * El changelog maestro (`db/changelog/db.changelog-master.xml`) está en XML y solo incluye los changesets.
 * Los changesets se escriben en SQL (formato *formatted SQL* de Liquibase) dentro de `db/changelog/changes/`, numerados en orden: `001-crear-usuario.sql`, `002-...`. Cada archivo empieza con `--liquibase formatted sql`, y cada changeset con `--changeset <autor>:<id>`.
 * Ninguna credencial se sube al repositorio: van en el `.env`, que está en el `.gitignore`.
+* La hora actual se obtiene del bean Clock: LocalDateTime.now(clock), no LocalDateTime.now()
