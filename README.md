@@ -27,7 +27,7 @@ Plataforma de agendamiento de tutorías académicas diseñada bajo los lineamien
 El proyecto sigue una arquitectura monolítica modular organizada en paquetes por responsabilidad técnica, según los requerimientos de la cátedra:
 * `controllers`: Controladores REST / Spring MVC.
 * `services` / `services.impl`: Interfaces de lógica de negocio y sus implementaciones.
-* `repositories` / `repositories.impl`: Interfaces de acceso a datos e implementaciones personalizadas.
+* `repositories`: Interfaces de Spring Data JPA para el acceso a datos.
 * `models`: Entidades de dominio (JPA).
 * `dtos`: Objetos de transferencia de datos.
 * `validators`: Lógica de validación personalizada.
