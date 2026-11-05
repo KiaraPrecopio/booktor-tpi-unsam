@@ -8,4 +8,5 @@
     <include file="changes/001-crear-usuario-y-admin.sql" relativeToChangelogFile="true"/>
     <include file="changes/002-crear-materia.sql" relativeToChangelogFile="true"/>
     <include file="changes/003-crear-adaptacion.sql" relativeToChangelogFile="true"/>
+    <include file="changes/004-crear-usuario-adaptacion.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>
