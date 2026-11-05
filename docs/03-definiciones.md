@@ -10,7 +10,9 @@
 | **Duración del turno** | Minutos que dura cada turno de un tutor. Es única por tutor. |
 | **Bloque** | Rango horario (fecha, hora desde y hora hasta) que el tutor carga para generar varios turnos de una vez. No se guarda. |
 | **Turno** | Horario concreto de un tutor para una materia, con la duración del tutor. Es el horario en sí, esté reservado o no. |
+| **Modalidad** | Forma en que se da el turno: VIRTUAL (con el link de la reunión) o PRESENCIAL (con el lugar). Se elige al generar el bloque. |
 | **Reserva** | Registro de que un estudiante tomó un turno: quién, cuándo y en qué estado está. Si se cancela, guarda también quién canceló y cuándo. |
+| **Objetivo** | Texto opcional que el estudiante escribe al reservar, para contarle al tutor qué quiere trabajar en la tutoría. |
 | **Baja lógica** | El registro no se borra de la base: se marca como inactivo (en los turnos, con el estado DADO_DE_BAJA) y deja de aparecer en los listados. |
 
 ## Estados
@@ -78,6 +80,7 @@ Como entre una corrida y la siguiente puede haber turnos terminados que todavía
 - **RN-10.** Cada turno es de una sola materia, que tiene que estar activa. La reserva es de la materia de su turno.
 - **RN-11.** Ningún turno nuevo puede superponerse con los turnos del tutor que no estén DADOS_DE_BAJA, aunque sean de otra materia. Si alguno se superpone, el sistema rechaza el bloque entero e indica con qué turnos choca.
 - **RN-12.** El tutor puede dar de baja sus turnos DISPONIBLES: pasan a DADO_DE_BAJA y dejan de ofrecerse. Un turno ASIGNADO no se puede dar de baja: primero hay que cancelar su reserva.
+- **RN-27.** Cada bloque indica su modalidad. Si es VIRTUAL, el link de la reunión es obligatorio; si es PRESENCIAL, el lugar es obligatorio. Todos los turnos del bloque heredan la modalidad y el link o lugar.
 
 ### Reservas
 - **RN-13.** Solo se pueden reservar turnos DISPONIBLES. Al reservar, se crea una reserva ACTIVA y el turno pasa a ASIGNADO.
@@ -85,11 +88,13 @@ Como entre una corrida y la siguiente puede haber turnos terminados que todavía
 - **RN-15.** El tutor del turno y el estudiante que reserva tienen que estar activos.
 - **RN-16.** Un estudiante no puede tener dos reservas ACTIVAS que se superpongan en el horario. Si lo intenta, el sistema rechaza la reserva e informa con qué turno se superpone.
 - **RN-17.** Un turno tiene como máximo una reserva ACTIVA.
+- **RN-29.** Al reservar, el estudiante puede escribir un objetivo para la tutoría. Es opcional y tiene como máximo 500 caracteres. Solo lo ven el estudiante, el tutor del turno y el administrador.
 
 ### Búsqueda y listados
 - **RN-18.** La búsqueda de turnos para reservar excluye los turnos cuyo horario ya pasó, comparando su inicio con la hora actual y sin depender del estado del turno.
 - **RN-19.** La búsqueda de materias es por nombre y muestra solo las materias activas que tienen turnos disponibles: turnos DISPONIBLES, futuros y de tutores activos.
 - **RN-20.** Al elegir una materia, el estudiante ve los tutores que tienen turnos disponibles en ella, con sus adaptaciones y sus turnos. Puede filtrar los tutores por adaptación: si elige varias, ve solo los tutores que ofrecen **todas** las elegidas.
+- **RN-28.** La búsqueda muestra la modalidad de cada turno y se puede filtrar por ella. El link de la reunión o el lugar no se muestran en la búsqueda: solo los ven el estudiante que reservó, el tutor y el administrador.
 
 ### Cancelaciones
 - **RN-21.** Solo se pueden cancelar reservas ACTIVAS de turnos que todavía no empezaron. La reserva pasa a CANCELADA, se registra quién canceló y cuándo, y el turno vuelve a DISPONIBLE.
@@ -127,3 +132,8 @@ Cuando una operación se rechaza por el estado del sistema (RN-16, RN-24, RN-26 
 | La búsqueda excluye los turnos pasados comparando su inicio con la hora actual. | Funciona bien sin importar cuándo se actualicen los estados. |
 | La superposición de reservas del estudiante se rechaza, sin pedir confirmación. | Es más simple de implementar y de usar. |
 | Las bajas con dependencias se bloquean con un mensaje explicativo (409). | Es consistente en todo el sistema y le dice al usuario qué hacer. |
+| La modalidad se elige por bloque y queda guardada en cada turno. | Un tutor puede dar algunos turnos virtuales y otros presenciales. Cubre el principio de acción y expresión del DUA sin agregar tablas. |
+| El link o el lugar solo los ve quien reservó. | Evita publicar el link de la reunión a cualquiera que busque. |
+| El objetivo es opcional y se guarda en la reserva. | Cubre el principio de implicación del DUA sin obligar al estudiante a escribir. Es de cada reserva, no del perfil, porque cambia de una tutoría a otra. |
+| Las valoraciones quedan como extra. | Acota el MVP a la fecha de entrega. El objetivo de la reserva ya cubre parte de la implicación. |
+| La disponibilidad del tutor no es una tabla aparte: es el conjunto de sus turnos DISPONIBLES. | La reserva sí es una entidad aparte (guarda el historial), pero un turno sin reservar ya representa la disponibilidad. Así no hay que sincronizar dos tablas. |
