@@ -10,4 +10,5 @@ public interface ReservaService {
     ReservaResponse reservar(ReservaRequest request);
     ReservaResponse cancelar(Long id, CancelacionRequest request);
     List<ReservaResponse> listarActivasFuturas();
+    List<ReservaResponse> listarProximasDeEstudiante(Long estudianteId);
 }

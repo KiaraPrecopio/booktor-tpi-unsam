@@ -140,4 +140,15 @@ public class ReservaServiceImpl implements ReservaService {
                 .map(ReservaMapper::toResponse)
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> listarProximasDeEstudiante(Long estudianteId) {
+        usuarioRepository.findByIdAndRolAndActivoTrue(estudianteId, Rol.ESTUDIANTE)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un estudiante activo con el id [" + estudianteId + "]."));
+
+        return reservaRepository.buscarActivasFuturasDeEstudiante(estudianteId, LocalDateTime.now(clock)).stream()
+                .map(ReservaMapper::toResponse)
+                .toList();
+    }
 }

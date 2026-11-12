@@ -44,4 +44,9 @@ public class ReservaController {
     public ResponseEntity<List<ReservaResponse>> listarActivasFuturas() {
         return ResponseEntity.ok(reservaService.listarActivasFuturas());
     }
+
+    @GetMapping("/estudiante/{estudianteId}")
+    public ResponseEntity<List<ReservaResponse>> listarProximasDeEstudiante(@PathVariable Long estudianteId) {
+        return ResponseEntity.ok(reservaService.listarProximasDeEstudiante(estudianteId));
+    }
 }

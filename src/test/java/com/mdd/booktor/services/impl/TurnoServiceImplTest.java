@@ -22,19 +22,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.mdd.booktor.dtos.BajaTurnoRequest;
 import com.mdd.booktor.dtos.BloqueTurnosRequest;
 import com.mdd.booktor.dtos.TurnoResponse;
+import com.mdd.booktor.dtos.TurnoTutorResponse;
+import com.mdd.booktor.exceptions.AccesoDenegadoException;
 import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.DatoInvalidoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
+import com.mdd.booktor.models.EstadoReserva;
 import com.mdd.booktor.models.EstadoTurno;
 import com.mdd.booktor.models.Materia;
 import com.mdd.booktor.models.Modalidad;
+import com.mdd.booktor.models.Reserva;
 import com.mdd.booktor.models.Rol;
 import com.mdd.booktor.models.Turno;
 import com.mdd.booktor.models.Usuario;
 import com.mdd.booktor.repositories.MateriaRepository;
+import com.mdd.booktor.repositories.ReservaRepository;
 import com.mdd.booktor.repositories.TurnoRepository;
 import com.mdd.booktor.repositories.UsuarioRepository;
 
@@ -55,6 +62,9 @@ class TurnoServiceImplTest {
     @Mock
     private MateriaRepository materiaRepository;
 
+    @Mock
+    private ReservaRepository reservaRepository;
+
     private TurnoServiceImpl service;
     private Usuario tutor;
     private Materia materia;
@@ -62,7 +72,7 @@ class TurnoServiceImplTest {
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(AHORA.atZone(ZONA).toInstant(), ZONA);
-        service = new TurnoServiceImpl(turnoRepository, usuarioRepository, materiaRepository, clock);
+        service = new TurnoServiceImpl(turnoRepository, usuarioRepository, materiaRepository, reservaRepository, clock);
         tutor = new Usuario("Ana", "Gómez", "ana@mail.com", "hash", Rol.TUTOR, true);
         tutor.setDuracionTurnoMinutos(60);
         materia = new Materia("Matemática", null, true);
@@ -223,5 +233,92 @@ class TurnoServiceImplTest {
 
         verify(turnoRepository).buscarSuperpuestos(1L, MANANA.atTime(14, 0), MANANA.atTime(16, 0));
         verify(turnoRepository).saveAll(any());
+    }
+
+    private Turno turnoDelTutor(LocalDateTime inicio) {
+        ReflectionTestUtils.setField(tutor, "id", 1L);
+        return new Turno(tutor, materia, inicio, inicio.plusHours(1), Modalidad.VIRTUAL, LINK, null);
+    }
+
+    @Test
+    void listarProximosDelTutorMuestraElEstudianteSoloEnLosAsignados() {
+        Turno libre = turnoDelTutor(MANANA.atTime(14, 0));
+        Turno asignado = turnoDelTutor(MANANA.atTime(15, 0));
+        asignado.setEstado(EstadoTurno.ASIGNADO);
+        Usuario juan = new Usuario("Juan", "Pérez", "juan@mail.com", "hash", Rol.ESTUDIANTE, true);
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(tutor));
+        when(turnoRepository.buscarFuturosDeTutor(1L, List.of(EstadoTurno.DISPONIBLE, EstadoTurno.ASIGNADO), AHORA))
+                .thenReturn(List.of(libre, asignado));
+        when(reservaRepository.buscarActivasFuturasDeTutor(1L, AHORA))
+                .thenReturn(List.of(new Reserva(asignado, juan, AHORA, "Repasar límites")));
+
+        List<TurnoTutorResponse> respuesta = service.listarProximosDeTutor(1L);
+
+        assertEquals(2, respuesta.size());
+        assertEquals(EstadoTurno.DISPONIBLE, respuesta.get(0).estado());
+        assertNull(respuesta.get(0).estudiante());
+        assertEquals(EstadoTurno.ASIGNADO, respuesta.get(1).estado());
+        assertEquals("Juan Pérez", respuesta.get(1).estudiante());
+        assertEquals("Repasar límites", respuesta.get(1).objetivo());
+    }
+
+    @Test
+    void listarProximosDeTutorInexistenteLanza404() {
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(99L, Rol.TUTOR)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.listarProximosDeTutor(99L));
+    }
+
+    @Test
+    void darDeBajaUnTurnoDisponibleLoPasaADadoDeBaja() {
+        Turno turno = turnoDelTutor(MANANA.atTime(14, 0));
+        when(turnoRepository.findById(5L)).thenReturn(Optional.of(turno));
+
+        TurnoResponse respuesta = service.darDeBaja(5L, new BajaTurnoRequest(1L));
+
+        assertEquals(EstadoTurno.DADO_DE_BAJA, turno.getEstado());
+        assertEquals(EstadoTurno.DADO_DE_BAJA, respuesta.estado());
+        verify(turnoRepository).save(turno);
+    }
+
+    @Test
+    void darDeBajaUnTurnoAsignadoLanza409ConLaReservaACancelar() {
+        Turno turno = turnoDelTutor(MANANA.atTime(14, 0));
+        turno.setEstado(EstadoTurno.ASIGNADO);
+        Reserva reserva = new Reserva(turno, new Usuario("Juan", "Pérez", "juan@mail.com", "hash", Rol.ESTUDIANTE, true), AHORA, null);
+        ReflectionTestUtils.setField(reserva, "id", 8L);
+        when(turnoRepository.findById(5L)).thenReturn(Optional.of(turno));
+        when(reservaRepository.findByTurno_IdAndEstado(5L, EstadoReserva.ACTIVA)).thenReturn(Optional.of(reserva));
+
+        ConflictoException ex = assertThrows(ConflictoException.class, () -> service.darDeBaja(5L, new BajaTurnoRequest(1L)));
+
+        assertEquals("No se puede dar de baja el turno, primero hay que cancelar la reserva [8] de Juan Pérez.", ex.getMessage());
+        assertEquals(EstadoTurno.ASIGNADO, turno.getEstado());
+        verify(turnoRepository, never()).save(any());
+    }
+
+    @Test
+    void darDeBajaUnTurnoDeOtroTutorLanza403() {
+        when(turnoRepository.findById(5L)).thenReturn(Optional.of(turnoDelTutor(MANANA.atTime(14, 0))));
+
+        assertThrows(AccesoDenegadoException.class, () -> service.darDeBaja(5L, new BajaTurnoRequest(2L)));
+
+        verify(turnoRepository, never()).save(any());
+    }
+
+    @Test
+    void darDeBajaUnTurnoYaDadoDeBajaLanza409() {
+        Turno turno = turnoDelTutor(MANANA.atTime(14, 0));
+        turno.setEstado(EstadoTurno.DADO_DE_BAJA);
+        when(turnoRepository.findById(5L)).thenReturn(Optional.of(turno));
+
+        assertThrows(ConflictoException.class, () -> service.darDeBaja(5L, new BajaTurnoRequest(1L)));
+    }
+
+    @Test
+    void darDeBajaTurnoInexistenteLanza404() {
+        when(turnoRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.darDeBaja(99L, new BajaTurnoRequest(1L)));
     }
 }

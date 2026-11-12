@@ -43,4 +43,14 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
     List<Turno> buscarDisponiblesDeMateria(@Param("materiaId") Long materiaId, @Param("ahora") LocalDateTime ahora);
 
     boolean existsByTutor_IdAndEstadoAndInicioAfter(Long tutorId, EstadoTurno estado, LocalDateTime inicio);
+
+    @Query("""
+            SELECT t FROM Turno t JOIN FETCH t.materia
+            WHERE t.tutor.id = :tutorId
+              AND t.estado IN :estados
+              AND t.inicio > :ahora
+            ORDER BY t.inicio
+            """)
+    List<Turno> buscarFuturosDeTutor(@Param("tutorId") Long tutorId, @Param("estados") List<EstadoTurno> estados,
+            @Param("ahora") LocalDateTime ahora);
 }

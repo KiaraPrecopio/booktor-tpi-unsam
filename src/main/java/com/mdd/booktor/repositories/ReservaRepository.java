@@ -2,11 +2,13 @@ package com.mdd.booktor.repositories;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.mdd.booktor.models.EstadoReserva;
 import com.mdd.booktor.models.Reserva;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
@@ -46,4 +48,6 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             ORDER BY t.inicio
             """)
     List<Reserva> buscarActivasFuturas(@Param("ahora") LocalDateTime ahora);
+
+    Optional<Reserva> findByTurno_IdAndEstado(Long turnoId, EstadoReserva estado);
 }

@@ -346,4 +346,24 @@ class ReservaServiceImplTest {
         assertEquals(1, respuesta.size());
         assertEquals("Juan Pérez", respuesta.get(0).estudiante());
     }
+
+    @Test
+    void listarProximasDelEstudianteTraeSusReservasActivas() {
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(estudiante));
+        when(reservaRepository.buscarActivasFuturasDeEstudiante(1L, AHORA))
+                .thenReturn(List.of(new Reserva(turnoQueEmpieza(AHORA.plusDays(1)), estudiante, AHORA, null)));
+
+        List<ReservaResponse> respuesta = service.listarProximasDeEstudiante(1L);
+
+        assertEquals(1, respuesta.size());
+        assertEquals("Ana Gómez", respuesta.get(0).tutor());
+        assertEquals("Matemática", respuesta.get(0).materia());
+    }
+
+    @Test
+    void listarProximasDeEstudianteInexistenteLanza404() {
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(99L, Rol.ESTUDIANTE)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.listarProximasDeEstudiante(99L));
+    }
 }
