@@ -4,16 +4,20 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mdd.booktor.dtos.CancelacionRequest;
 import com.mdd.booktor.dtos.ReservaRequest;
 import com.mdd.booktor.dtos.ReservaResponse;
+import com.mdd.booktor.exceptions.AccesoDenegadoException;
 import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
+import com.mdd.booktor.models.EstadoReserva;
 import com.mdd.booktor.models.EstadoTurno;
 import com.mdd.booktor.models.Reserva;
 import com.mdd.booktor.models.Rol;
@@ -88,5 +92,52 @@ public class ReservaServiceImpl implements ReservaService {
         turnoRepository.save(turno);
 
         return ReservaMapper.toResponse(reserva);
+    }
+
+    @Override
+    @Transactional
+    public ReservaResponse cancelar(Long id, CancelacionRequest request) {
+        Reserva reserva = reservaRepository.findById(id)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe una reserva con el id [" + id + "]."));
+
+        Usuario usuario = usuarioRepository.findById(request.usuarioId())
+            .filter(Usuario::isActivo)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un usuario activo con el id [" + request.usuarioId() + "]."));
+
+        Turno turno = reserva.getTurno();
+        boolean puedeCancelar = switch (usuario.getRol()) {
+            case ADMINISTRADOR -> true;
+            case ESTUDIANTE -> Objects.equals(reserva.getEstudiante().getId(), usuario.getId());
+            case TUTOR -> Objects.equals(turno.getTutor().getId(), usuario.getId());
+        };
+        if (!puedeCancelar) {
+            throw new AccesoDenegadoException("Solo pueden cancelar la reserva el estudiante que reservó, el tutor del turno o un administrador.");
+        }
+
+        if (reserva.getEstado() != EstadoReserva.ACTIVA) {
+            throw new ConflictoException("Solo se pueden cancelar reservas activas.");
+        }
+
+        LocalDateTime ahora = LocalDateTime.now(clock);
+        if (!ahora.isBefore(turno.getInicio())) {
+            throw new ConflictoException("No se puede cancelar la reserva de un turno que ya empezó.");
+        }
+
+        reserva.setEstado(EstadoReserva.CANCELADA);
+        reserva.setCanceladaPor(usuario.getRol());
+        reserva.setFechaCancelacion(ahora);
+        turno.setEstado(EstadoTurno.DISPONIBLE);
+        reservaRepository.save(reserva);
+        turnoRepository.save(turno);
+
+        return ReservaMapper.toResponse(reserva);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> listarActivasFuturas() {
+        return reservaRepository.buscarActivasFuturas(LocalDateTime.now(clock)).stream()
+                .map(ReservaMapper::toResponse)
+                .toList();
     }
 }

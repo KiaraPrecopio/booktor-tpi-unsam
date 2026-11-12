@@ -21,9 +21,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.mdd.booktor.dtos.CancelacionRequest;
 import com.mdd.booktor.dtos.ReservaRequest;
 import com.mdd.booktor.dtos.ReservaResponse;
+import com.mdd.booktor.exceptions.AccesoDenegadoException;
 import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
 import com.mdd.booktor.models.EstadoReserva;
@@ -212,5 +215,135 @@ class ReservaServiceImplTest {
 
         assertEquals("Este turno acaba de ser reservado por otra persona.", ex.getMessage());
         verify(turnoRepository, never()).save(any());
+    }
+
+    private Usuario conId(Usuario usuario, Long id) {
+        ReflectionTestUtils.setField(usuario, "id", id);
+        return usuario;
+    }
+
+    private Reserva reservaActiva(Turno turno) {
+        turno.setEstado(EstadoTurno.ASIGNADO);
+        Reserva reserva = new Reserva(turno, conId(estudiante, 1L), AHORA.minusDays(1), null);
+        when(reservaRepository.findById(10L)).thenReturn(Optional.of(reserva));
+        return reserva;
+    }
+
+    private void quienCancela(Usuario usuario) {
+        when(usuarioRepository.findById(usuario.getId())).thenReturn(Optional.of(usuario));
+    }
+
+    @Test
+    void elEstudianteCancelaSuReservaYElTurnoVuelveADisponible() {
+        Turno turno = turnoQueEmpieza(AHORA.plusDays(1));
+        Reserva reserva = reservaActiva(turno);
+        quienCancela(estudiante);
+
+        ReservaResponse respuesta = service.cancelar(10L, new CancelacionRequest(1L));
+
+        assertEquals(EstadoReserva.CANCELADA, reserva.getEstado());
+        assertEquals(Rol.ESTUDIANTE, reserva.getCanceladaPor());
+        assertEquals(AHORA, reserva.getFechaCancelacion());
+        assertEquals(EstadoTurno.DISPONIBLE, turno.getEstado());
+        assertEquals(Rol.ESTUDIANTE, respuesta.canceladaPor());
+        verify(reservaRepository).save(reserva);
+        verify(turnoRepository).save(turno);
+    }
+
+    @Test
+    void elTutorDelTurnoPuedeCancelar() {
+        conId(tutor, 3L);
+        Reserva reserva = reservaActiva(turnoQueEmpieza(AHORA.plusDays(1)));
+        quienCancela(tutor);
+
+        service.cancelar(10L, new CancelacionRequest(3L));
+
+        assertEquals(Rol.TUTOR, reserva.getCanceladaPor());
+    }
+
+    @Test
+    void unAdministradorPuedeCancelar() {
+        Reserva reserva = reservaActiva(turnoQueEmpieza(AHORA.plusDays(1)));
+        quienCancela(conId(new Usuario("Admin", "Booktor", "admin@mail.com", "hash", Rol.ADMINISTRADOR, true), 9L));
+
+        service.cancelar(10L, new CancelacionRequest(9L));
+
+        assertEquals(Rol.ADMINISTRADOR, reserva.getCanceladaPor());
+    }
+
+    @Test
+    void otroEstudianteNoPuedeCancelarLanza403() {
+        reservaActiva(turnoQueEmpieza(AHORA.plusDays(1)));
+        quienCancela(conId(new Usuario("María", "López", "maria@mail.com", "hash", Rol.ESTUDIANTE, true), 4L));
+
+        assertThrows(AccesoDenegadoException.class, () -> service.cancelar(10L, new CancelacionRequest(4L)));
+
+        verify(reservaRepository, never()).save(any());
+    }
+
+    @Test
+    void otroTutorNoPuedeCancelarLanza403() {
+        conId(tutor, 3L);
+        reservaActiva(turnoQueEmpieza(AHORA.plusDays(1)));
+        quienCancela(conId(new Usuario("Luis", "Díaz", "luis@mail.com", "hash", Rol.TUTOR, true), 5L));
+
+        assertThrows(AccesoDenegadoException.class, () -> service.cancelar(10L, new CancelacionRequest(5L)));
+    }
+
+    @Test
+    void cancelarUnaReservaYaCanceladaLanza409() {
+        Reserva reserva = reservaActiva(turnoQueEmpieza(AHORA.plusDays(1)));
+        reserva.setEstado(EstadoReserva.CANCELADA);
+        quienCancela(estudiante);
+
+        assertThrows(ConflictoException.class, () -> service.cancelar(10L, new CancelacionRequest(1L)));
+
+        verify(reservaRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelarUnTurnoQueYaEmpezoLanza409() {
+        reservaActiva(turnoQueEmpieza(AHORA));
+        quienCancela(estudiante);
+
+        assertThrows(ConflictoException.class, () -> service.cancelar(10L, new CancelacionRequest(1L)));
+
+        verify(reservaRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelarReservaInexistenteLanza404() {
+        when(reservaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.cancelar(99L, new CancelacionRequest(1L)));
+    }
+
+    @Test
+    void despuesDeCancelarOtroEstudiantePuedeReservarElMismoTurno() {
+        Turno turno = turnoQueEmpieza(AHORA.plusDays(1));
+        reservaActiva(turno);
+        quienCancela(estudiante);
+        service.cancelar(10L, new CancelacionRequest(1L));
+
+        Usuario maria = new Usuario("María", "López", "maria@mail.com", "hash", Rol.ESTUDIANTE, true);
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(4L, Rol.ESTUDIANTE)).thenReturn(Optional.of(maria));
+        when(turnoRepository.findById(2L)).thenReturn(Optional.of(turno));
+        guardarDevuelveLoMismo();
+
+        ReservaResponse nueva = service.reservar(new ReservaRequest(4L, 2L, null));
+
+        assertEquals(EstadoReserva.ACTIVA, nueva.estado());
+        assertEquals(EstadoTurno.ASIGNADO, turno.getEstado());
+    }
+
+    @Test
+    void listarActivasFuturasUsaLaHoraActual() {
+        when(reservaRepository.buscarActivasFuturas(AHORA))
+                .thenReturn(List.of(new Reserva(turnoQueEmpieza(AHORA.plusDays(1)), estudiante, AHORA, null)));
+
+        List<ReservaResponse> respuesta = service.listarActivasFuturas();
+
+        assertEquals(1, respuesta.size());
+        assertEquals("Juan Pérez", respuesta.get(0).estudiante());
     }
 }

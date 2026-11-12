@@ -38,4 +38,12 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             ORDER BY t.inicio
             """)
     List<Reserva> buscarActivasFuturasDeTutor(@Param("tutorId") Long tutorId, @Param("ahora") LocalDateTime ahora);
+
+    @Query("""
+            SELECT r FROM Reserva r JOIN FETCH r.turno t JOIN FETCH t.materia JOIN FETCH t.tutor JOIN FETCH r.estudiante
+            WHERE r.estado = com.mdd.booktor.models.EstadoReserva.ACTIVA
+              AND t.inicio > :ahora
+            ORDER BY t.inicio
+            """)
+    List<Reserva> buscarActivasFuturas(@Param("ahora") LocalDateTime ahora);
 }

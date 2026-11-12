@@ -15,6 +15,7 @@ public final class ReservaMapper {
             reserva.getId(),
             turno.getId(),
             reserva.getEstudiante().getId(),
+            reserva.getEstudiante().getNombre() + " " + reserva.getEstudiante().getApellido(),
             turno.getMateria().getNombre(),
             turno.getTutor().getNombre() + " " + turno.getTutor().getApellido(),
             turno.getInicio(),
@@ -24,7 +25,9 @@ public final class ReservaMapper {
             turno.getLugar(),
             reserva.getEstado(),
             reserva.getFechaReserva(),
-            reserva.getObjetivo()
+            reserva.getObjetivo(),
+            reserva.getCanceladaPor(),
+            reserva.getFechaCancelacion()
         );
     }
 }
