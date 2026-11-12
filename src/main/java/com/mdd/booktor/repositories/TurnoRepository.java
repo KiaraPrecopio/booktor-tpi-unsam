@@ -41,4 +41,6 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
             ORDER BY t.inicio
             """)
     List<Turno> buscarDisponiblesDeMateria(@Param("materiaId") Long materiaId, @Param("ahora") LocalDateTime ahora);
+
+    boolean existsByTutor_IdAndEstadoAndInicioAfter(Long tutorId, EstadoTurno estado, LocalDateTime inicio);
 }

@@ -10,14 +10,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,9 +31,16 @@ import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.DatoInvalidoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
 import com.mdd.booktor.models.Adaptacion;
+import com.mdd.booktor.models.EstadoTurno;
+import com.mdd.booktor.models.Materia;
+import com.mdd.booktor.models.Modalidad;
+import com.mdd.booktor.models.Reserva;
 import com.mdd.booktor.models.Rol;
+import com.mdd.booktor.models.Turno;
 import com.mdd.booktor.models.Usuario;
 import com.mdd.booktor.repositories.AdaptacionRepository;
+import com.mdd.booktor.repositories.ReservaRepository;
+import com.mdd.booktor.repositories.TurnoRepository;
 import com.mdd.booktor.repositories.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,11 +54,25 @@ class TutorServiceImplTest {
     @Mock
     private AdaptacionRepository adaptacionRepository;
 
+    private static final ZoneId ZONA = ZoneId.of("America/Argentina/Buenos_Aires");
+    private static final LocalDateTime AHORA = LocalDateTime.of(2026, 11, 10, 10, 0);
+
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
+    @Mock
+    private TurnoRepository turnoRepository;
+
+    @Mock
+    private ReservaRepository reservaRepository;
+
     private TutorServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        Clock clock = Clock.fixed(AHORA.atZone(ZONA).toInstant(), ZONA);
+        service = new TutorServiceImpl(usuarioRepository, adaptacionRepository, passwordEncoder, turnoRepository, reservaRepository, clock);
+    }
 
     private Usuario tutorExistente() {
         Usuario tutor = new Usuario("Ana", "Gómez", "ana@mail.com", "hash-anterior", Rol.TUTOR, true);
@@ -181,6 +205,47 @@ class TutorServiceImplTest {
 
         assertFalse(existente.isActivo());
         verify(usuarioRepository).save(existente);
+    }
+
+    @Test
+    void modificarDuracionConTurnosAsignadosLanza409() {
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(tutorExistente()));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
+        when(turnoRepository.existsByTutor_IdAndEstadoAndInicioAfter(1L, EstadoTurno.ASIGNADO, AHORA)).thenReturn(true);
+
+        assertThrows(ConflictoException.class, () -> service.modificar(1L, request("ana@mail.com", null, 30, IDS)));
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void modificarSinCambiarLaDuracionNoRevisaLosTurnos() {
+        Usuario existente = tutorExistente();
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
+        adaptacionesActivas();
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, request("ana@mail.com", null, 60, IDS));
+
+        verify(turnoRepository, never()).existsByTutor_IdAndEstadoAndInicioAfter(any(), any(), any());
+    }
+
+    @Test
+    void darDeBajaConReservasActivasLanza409() {
+        Usuario existente = tutorExistente();
+        Usuario estudiante = new Usuario("Juan", "Pérez", "juan@mail.com", "hash", Rol.ESTUDIANTE, true);
+        LocalDateTime inicio = LocalDateTime.of(2026, 11, 11, 14, 0);
+        Turno turno = new Turno(existente, new Materia("Matemática", null, true), inicio, inicio.plusHours(1), Modalidad.VIRTUAL, "https://meet.com/x", null);
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(reservaRepository.buscarActivasFuturasDeTutor(1L, AHORA))
+                .thenReturn(List.of(new Reserva(turno, estudiante, AHORA, null)));
+
+        ConflictoException ex = assertThrows(ConflictoException.class, () -> service.darDeBaja(1L));
+
+        assertTrue(ex.getMessage().startsWith("No se puede dar de baja al tutor"));
+        assertTrue(existente.isActivo());
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test

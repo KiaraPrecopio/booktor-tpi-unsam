@@ -1,5 +1,8 @@
 package com.mdd.booktor.services.impl;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -16,9 +19,13 @@ import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.DatoInvalidoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
 import com.mdd.booktor.models.Adaptacion;
+import com.mdd.booktor.models.EstadoTurno;
 import com.mdd.booktor.models.Rol;
 import com.mdd.booktor.models.Usuario;
+import com.mdd.booktor.models.Reserva;
 import com.mdd.booktor.repositories.AdaptacionRepository;
+import com.mdd.booktor.repositories.ReservaRepository;
+import com.mdd.booktor.repositories.TurnoRepository;
 import com.mdd.booktor.repositories.UsuarioRepository;
 import com.mdd.booktor.services.TutorService;
 import com.mdd.booktor.utils.TutorMapper;
@@ -29,12 +36,18 @@ public class TutorServiceImpl implements TutorService {
     private final UsuarioRepository usuarioRepository;
     private final AdaptacionRepository adaptacionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TurnoRepository turnoRepository;
+    private final ReservaRepository reservaRepository;
+    private final Clock clock;
 
     public TutorServiceImpl(UsuarioRepository usuarioRepository, AdaptacionRepository adaptacionRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder, TurnoRepository turnoRepository, ReservaRepository reservaRepository, Clock clock) {
         this.usuarioRepository = usuarioRepository;
         this.adaptacionRepository = adaptacionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.turnoRepository = turnoRepository;
+        this.reservaRepository = reservaRepository;
+        this.clock = clock;
     }
 
     @Override
@@ -89,6 +102,11 @@ public class TutorServiceImpl implements TutorService {
             throw new ConflictoException("Ya existe un usuario con el email [" + email + "], vuelva a intentar con otro email.");
         }
 
+        if (!request.duracionTurnoMinutos().equals(tutor.getDuracionTurnoMinutos())
+                && turnoRepository.existsByTutor_IdAndEstadoAndInicioAfter(id, EstadoTurno.ASIGNADO, LocalDateTime.now(clock))) {
+            throw new ConflictoException("No se puede cambiar la duración del turno, el tutor tiene turnos futuros asignados.");
+        }
+
         Set<Adaptacion> adaptaciones = buscarAdaptacionesActivas(request.adaptacionIds());
 
         tutor.setNombre(request.nombre().trim());
@@ -107,6 +125,13 @@ public class TutorServiceImpl implements TutorService {
     @Transactional
     public void darDeBaja(Long id) {
         Usuario tutor = buscarTutorActivo(id);
+
+        List<Reserva> reservas = reservaRepository.buscarActivasFuturasDeTutor(id, LocalDateTime.now(clock));
+        if (!reservas.isEmpty()) {
+            throw new ConflictoException("No se puede dar de baja al tutor, primero hay que cancelar las reservas activas de sus turnos: "
+                    + describir(reservas) + ".");
+        }
+
         tutor.setActivo(false);
         usuarioRepository.save(tutor);
     }
@@ -114,6 +139,13 @@ public class TutorServiceImpl implements TutorService {
     private Usuario buscarTutorActivo(Long id) {
         return usuarioRepository.findByIdAndRolAndActivoTrue(id, Rol.TUTOR)
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe un tutor activo con el id [" + id + "]."));
+    }
+
+    private String describir(List<Reserva> reservas) {
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        return reservas.stream()
+                .map(r -> "[" + r.getId() + "] " + r.getTurno().getMateria().getNombre() + " " + r.getTurno().getInicio().format(formato))
+                .collect(Collectors.joining(", "));
     }
 
     private String normalizarEmail(String email) {

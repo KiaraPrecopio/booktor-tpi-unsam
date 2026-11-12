@@ -10,4 +10,5 @@
     <include file="changes/003-crear-adaptacion.sql" relativeToChangelogFile="true"/>
     <include file="changes/004-crear-usuario-adaptacion.sql" relativeToChangelogFile="true"/>
     <include file="changes/005-crear-turno.sql" relativeToChangelogFile="true"/>
+    <include file="changes/006-crear-reserva.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>
