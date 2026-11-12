@@ -1,5 +1,8 @@
 package com.mdd.booktor.services.impl;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -18,7 +21,9 @@ import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
 import com.mdd.booktor.models.Adaptacion;
 import com.mdd.booktor.models.Rol;
 import com.mdd.booktor.models.Usuario;
+import com.mdd.booktor.models.Reserva;
 import com.mdd.booktor.repositories.AdaptacionRepository;
+import com.mdd.booktor.repositories.ReservaRepository;
 import com.mdd.booktor.repositories.UsuarioRepository;
 import com.mdd.booktor.services.EstudianteService;
 import com.mdd.booktor.utils.EstudianteMapper;
@@ -29,12 +34,16 @@ public class EstudianteServiceImpl implements EstudianteService {
     private final UsuarioRepository usuarioRepository;
     private final AdaptacionRepository adaptacionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ReservaRepository reservaRepository;
+    private final Clock clock;
 
     public EstudianteServiceImpl(UsuarioRepository usuarioRepository, AdaptacionRepository adaptacionRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder, ReservaRepository reservaRepository, Clock clock) {
         this.usuarioRepository = usuarioRepository;
         this.adaptacionRepository = adaptacionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.reservaRepository = reservaRepository;
+        this.clock = clock;
     }
 
     @Override
@@ -107,6 +116,13 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Transactional
     public void darDeBaja(Long id) {
         Usuario estudiante = buscarEstudianteActivo(id);
+
+        List<Reserva> reservas = reservaRepository.buscarActivasFuturasDeEstudiante(id, LocalDateTime.now(clock));
+        if (!reservas.isEmpty()) {
+            throw new ConflictoException("No se puede dar de baja al estudiante, primero hay que cancelar sus reservas activas: "
+                    + describir(reservas) + ".");
+        }
+
         estudiante.setActivo(false);
         usuarioRepository.save(estudiante);
     }
@@ -114,6 +130,13 @@ public class EstudianteServiceImpl implements EstudianteService {
     private Usuario buscarEstudianteActivo(Long id) {
         return usuarioRepository.findByIdAndRolAndActivoTrue(id, Rol.ESTUDIANTE)
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe un estudiante activo con el id [" + id + "]."));
+    }
+
+    private String describir(List<Reserva> reservas) {
+        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        return reservas.stream()
+                .map(r -> "[" + r.getId() + "] " + r.getTurno().getMateria().getNombre() + " " + r.getTurno().getInicio().format(formato))
+                .collect(Collectors.joining(", "));
     }
 
     private String normalizarEmail(String email) {
