@@ -89,16 +89,6 @@ class FinalizarTurnosTaskTest {
     }
 
     @Test
-    void turnoQueTerminaEnUnMinutoNoSeFinaliza() {
-        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of());
-
-        task.finalizarTurnosTerminados();
-
-        verify(reservaRepository, never()).save(any());
-        verify(turnoRepository).saveAll(List.of());
-    }
-
-    @Test
     void turnoQueTerminaExactamenteAhoraPasaAFinalizado() {
         Turno turno = crearTurno(2L, AHORA.minusMinutes(30), AHORA, EstadoTurno.ASIGNADO);
         Reserva reserva = crearReserva(20L, turno, EstadoReserva.ACTIVA);
@@ -115,19 +105,11 @@ class FinalizarTurnosTaskTest {
         verify(reservaRepository).save(reserva);
     }
 
+    // La tarea solo busca la reserva ACTIVA del turno, así que las CANCELADAS nunca le llegan.
+    // Si el turno no tiene reserva ACTIVA, se finaliza el turno y no se guarda ninguna reserva.
     @Test
-    void turnosDisponiblesODadosDeBajaNoSonModificados() {
-        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of());
-
-        task.finalizarTurnosTerminados();
-
-        verify(reservaRepository, never()).save(any());
-    }
-
-    @Test
-    void reservaCanceladaNoSeModifica() {
+    void turnoSinReservaActivaSeFinalizaSinModificarReservas() {
         Turno turno = crearTurno(3L, AHORA.minusMinutes(31), AHORA.minusMinutes(1), EstadoTurno.ASIGNADO);
-        Reserva reservaCancelada = crearReserva(30L, turno, EstadoReserva.CANCELADA);
 
         when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of(turno));
         when(reservaRepository.findByTurno_IdAndEstado(3L, EstadoReserva.ACTIVA)).thenReturn(Optional.empty());
@@ -135,14 +117,15 @@ class FinalizarTurnosTaskTest {
         task.finalizarTurnosTerminados();
 
         assertEquals(EstadoTurno.FINALIZADO, turno.getEstado());
-        assertEquals(EstadoReserva.CANCELADA, reservaCancelada.getEstado());
-
         verify(reservaRepository, never()).save(any());
         verify(turnoRepository).saveAll(List.of(turno));
     }
 
+    // Qué turnos se finalizan (solo ASIGNADOS con fin <= ahora) lo decide la consulta
+    // buscarAsignadosTerminados, no la tarea: con el repositorio mockeado no se puede probar acá.
+    // Este test solo comprueba que, si la consulta no trae turnos, la tarea no modifica nada.
     @Test
-    void cuandoNoHayTurnosTerminadosNoModificaNada() {
+    void sinTurnosTerminadosNoModificaNada() {
         when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of());
 
         task.finalizarTurnosTerminados();
