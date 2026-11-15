@@ -33,6 +33,7 @@ El proyecto sigue una arquitectura monolítica modular organizada en paquetes po
 * `validators`: Lógica de validación personalizada.
 * `exceptions`: Manejo global de errores (`@RestControllerAdvice`).
 * `configs`: Configuraciones de Spring (seguridad, beans, reloj).
+* `tasks`: Tareas programadas (`@Scheduled`).
 * `utils`: Clases utilitarias compartidas.
 
 ## 📄 Documentación

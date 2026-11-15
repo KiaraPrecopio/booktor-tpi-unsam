@@ -53,4 +53,11 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
             """)
     List<Turno> buscarFuturosDeTutor(@Param("tutorId") Long tutorId, @Param("estados") List<EstadoTurno> estados,
             @Param("ahora") LocalDateTime ahora);
+
+    @Query("""
+            SELECT t FROM Turno t
+            WHERE t.estado = com.mdd.booktor.models.EstadoTurno.ASIGNADO
+              AND t.fin <= :ahora
+            """)
+    List<Turno> buscarAsignadosTerminados(@Param("ahora") LocalDateTime ahora);
 }
