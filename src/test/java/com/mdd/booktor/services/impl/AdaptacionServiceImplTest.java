@@ -24,13 +24,19 @@ import com.mdd.booktor.dtos.AdaptacionResponse;
 import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
 import com.mdd.booktor.models.Adaptacion;
+import com.mdd.booktor.models.Rol;
+import com.mdd.booktor.models.Usuario;
 import com.mdd.booktor.repositories.AdaptacionRepository;
+import com.mdd.booktor.repositories.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AdaptacionServiceImplTest {
 
     @Mock
     private AdaptacionRepository repository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @InjectMocks
     private AdaptacionServiceImpl service;
@@ -126,6 +132,21 @@ class AdaptacionServiceImplTest {
         // Baja lógica: se guarda con activo en false, no se borra
         assertFalse(adaptacion.isActivo());
         verify(repository).save(adaptacion);
+    }
+
+    @Test
+    void darDeBajaConTutoresActivosLanza409() {
+        Adaptacion adaptacion = new Adaptacion("Material visual", "Imágenes", true);
+        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(adaptacion));
+        when(usuarioRepository.findByRolAndActivoTrueAndAdaptaciones_Id(Rol.TUTOR, 1L)).thenReturn(List.of(
+                new Usuario("Ana", "Gómez", "ana@mail.com", "hash", Rol.TUTOR, true),
+                new Usuario("Luis", "Díaz", "luis@mail.com", "hash", Rol.TUTOR, true)));
+
+        ConflictoException ex = assertThrows(ConflictoException.class, () -> service.darDeBaja(1L));
+
+        assertEquals("No se puede dar de baja la adaptacion, la usan 2 tutores activos: Ana Gómez, Luis Díaz.", ex.getMessage());
+        assertTrue(adaptacion.isActivo());
+        verify(repository, never()).save(any());
     }
 
     @Test

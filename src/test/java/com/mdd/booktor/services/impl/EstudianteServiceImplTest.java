@@ -10,17 +10,21 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mdd.booktor.dtos.EstudianteRequest;
 import com.mdd.booktor.dtos.EstudianteResponse;
@@ -28,9 +32,14 @@ import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.DatoInvalidoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
 import com.mdd.booktor.models.Adaptacion;
+import com.mdd.booktor.models.Materia;
+import com.mdd.booktor.models.Modalidad;
+import com.mdd.booktor.models.Reserva;
 import com.mdd.booktor.models.Rol;
+import com.mdd.booktor.models.Turno;
 import com.mdd.booktor.models.Usuario;
 import com.mdd.booktor.repositories.AdaptacionRepository;
+import com.mdd.booktor.repositories.ReservaRepository;
 import com.mdd.booktor.repositories.UsuarioRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,11 +51,22 @@ class EstudianteServiceImplTest {
     @Mock
     private AdaptacionRepository adaptacionRepository;
 
+    private static final ZoneId ZONA = ZoneId.of("America/Argentina/Buenos_Aires");
+    private static final LocalDateTime AHORA = LocalDateTime.of(2026, 11, 10, 10, 0);
+
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @InjectMocks
+    @Mock
+    private ReservaRepository reservaRepository;
+
     private EstudianteServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        Clock clock = Clock.fixed(AHORA.atZone(ZONA).toInstant(), ZONA);
+        service = new EstudianteServiceImpl(usuarioRepository, adaptacionRepository, passwordEncoder, reservaRepository, clock);
+    }
 
     private Usuario estudianteExistente() {
         return new Usuario("Juan", "Pérez", "juan@mail.com", "hash-anterior", Rol.ESTUDIANTE, true);
@@ -192,6 +212,24 @@ class EstudianteServiceImplTest {
 
         assertFalse(existente.isActivo());
         verify(usuarioRepository).save(existente);
+    }
+
+    @Test
+    void darDeBajaConReservasActivasLanza409() {
+        Usuario existente = estudianteExistente();
+        Usuario tutor = new Usuario("Ana", "Gómez", "ana@mail.com", "hash", Rol.TUTOR, true);
+        LocalDateTime inicio = LocalDateTime.of(2026, 11, 11, 14, 0);
+        Turno turno = new Turno(tutor, new Materia("Matemática", null, true), inicio, inicio.plusHours(1), Modalidad.VIRTUAL, "https://meet.com/x", null);
+        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        Reserva reserva = new Reserva(turno, existente, AHORA, null);
+        ReflectionTestUtils.setField(reserva, "id", 5L);
+        when(reservaRepository.buscarActivasFuturasDeEstudiante(1L, AHORA)).thenReturn(List.of(reserva));
+
+        ConflictoException ex = assertThrows(ConflictoException.class, () -> service.darDeBaja(1L));
+
+        assertEquals("No se puede dar de baja al estudiante, primero hay que cancelar sus reservas activas: [5] Matemática 11/11/2026 14:00.", ex.getMessage());
+        assertTrue(existente.isActivo());
+        verify(usuarioRepository, never()).save(any());
     }
 
     @Test

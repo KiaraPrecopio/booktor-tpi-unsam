@@ -9,13 +9,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -23,17 +26,34 @@ import com.mdd.booktor.dtos.MateriaRequest;
 import com.mdd.booktor.dtos.MateriaResponse;
 import com.mdd.booktor.exceptions.ConflictoException;
 import com.mdd.booktor.exceptions.RecursoNoEncontradoException;
+import com.mdd.booktor.models.EstadoTurno;
 import com.mdd.booktor.models.Materia;
+import com.mdd.booktor.models.Modalidad;
+import com.mdd.booktor.models.Rol;
+import com.mdd.booktor.models.Turno;
+import com.mdd.booktor.models.Usuario;
 import com.mdd.booktor.repositories.MateriaRepository;
+import com.mdd.booktor.repositories.TurnoRepository;
 
 @ExtendWith(MockitoExtension.class)
 class MateriaServiceImplTest {
 
+    private static final ZoneId ZONA = ZoneId.of("America/Argentina/Buenos_Aires");
+    private static final LocalDateTime AHORA = LocalDateTime.of(2026, 11, 10, 10, 0);
+
     @Mock
     private MateriaRepository repository;
 
-    @InjectMocks
+    @Mock
+    private TurnoRepository turnoRepository;
+
     private MateriaServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        Clock clock = Clock.fixed(AHORA.atZone(ZONA).toInstant(), ZONA);
+        service = new MateriaServiceImpl(repository, turnoRepository, clock);
+    }
 
     @Test
     void crearMateriaValida() {
@@ -126,6 +146,24 @@ class MateriaServiceImplTest {
         // Baja lógica: se guarda con activo en false, no se borra
         assertFalse(materia.getActivo());
         verify(repository).save(materia);
+    }
+
+    @Test
+    void darDeBajaConTurnosFuturosLanza409() {
+        Materia materia = new Materia("Matemática", "Álgebra", true);
+        Usuario ana = new Usuario("Ana", "Gómez", "ana@mail.com", "hash", Rol.TUTOR, true);
+        LocalDateTime manana = AHORA.plusDays(1);
+        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(materia));
+        when(turnoRepository.buscarFuturosDeMateria(1L, List.of(EstadoTurno.DISPONIBLE, EstadoTurno.ASIGNADO), AHORA))
+                .thenReturn(List.of(
+                        new Turno(ana, materia, manana, manana.plusHours(1), Modalidad.VIRTUAL, "https://meet.com/x", null),
+                        new Turno(ana, materia, manana.plusHours(1), manana.plusHours(2), Modalidad.VIRTUAL, "https://meet.com/x", null)));
+
+        ConflictoException ex = assertThrows(ConflictoException.class, () -> service.darDeBaja(1L));
+
+        assertEquals("No se puede dar de baja la materia, tiene 2 turnos futuros de los tutores: Ana Gómez.", ex.getMessage());
+        assertTrue(materia.getActivo());
+        verify(repository, never()).save(any());
     }
 
     @Test
