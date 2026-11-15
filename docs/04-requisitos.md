@@ -60,7 +60,7 @@ Los lineamientos técnicos del TPI no se repiten acá. Esta sección lista solo 
 
 ### Pruebas
 - **RNF-06.** Cada regla de negocio tiene al menos una prueba, incluyendo sus casos límite (por ejemplo, reservar exactamente 5 minutos antes o turnos consecutivos).
-- **RNF-07.** La cobertura tiene un umbral mínimo verificado en el build. *(Valor del umbral a definir por el equipo.)*
+- **RNF-07.** La cobertura tiene un umbral mínimo verificado en el build con JaCoCo: `mvn verify` falla si los tests recorren menos del 85 % de las ramas (decisiones).
 - **RNF-10.** Los endpoints de generación de turnos, búsqueda, reserva y cancelación tienen pruebas con MockMvc que verifican el código de estado y el JSON de la respuesta, incluyendo los conflictos: reserva duplicada, horarios superpuestos, turnos pasados y cancelaciones no permitidas.
 
 ### Documentación de la API
