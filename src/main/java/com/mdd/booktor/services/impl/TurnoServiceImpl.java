@@ -163,6 +163,26 @@ public class TurnoServiceImpl implements TurnoService {
         return TurnoMapper.toResponse(turno);
     }
 
+    // Pasa a FINALIZADO los turnos ASIGNADOS cuyo horario ya terminó, y su reserva ACTIVA a FINALIZADA.
+    // La llama FinalizarTurnosTask cada 5 minutos.
+    @Override
+    @Transactional
+    public void finalizarTurnosTerminados() {
+        LocalDateTime ahora = LocalDateTime.now(clock);
+        List<Turno> turnos = turnoRepository.buscarAsignadosTerminados(ahora);
+
+        for (Turno turno : turnos) {
+            turno.setEstado(EstadoTurno.FINALIZADO);
+            reservaRepository.findByTurno_IdAndEstado(turno.getId(), EstadoReserva.ACTIVA)
+                    .ifPresent(reserva -> {
+                        reserva.setEstado(EstadoReserva.FINALIZADA);
+                        reservaRepository.save(reserva);
+                    });
+        }
+
+        turnoRepository.saveAll(turnos);
+    }
+
     private TurnoTutorResponse toTurnoTutorResponse(Turno turno, Reserva reserva) {
         return new TurnoTutorResponse(
             turno.getId(),
