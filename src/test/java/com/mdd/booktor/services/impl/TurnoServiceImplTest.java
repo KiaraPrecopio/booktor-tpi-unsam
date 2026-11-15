@@ -1,14 +1,5 @@
 package com.mdd.booktor.services.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,10 +8,18 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -320,5 +319,89 @@ class TurnoServiceImplTest {
         when(turnoRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> service.darDeBaja(99L, new BajaTurnoRequest(1L)));
+    }
+
+    private Turno turnoAsignado(Long id, LocalDateTime inicio, LocalDateTime fin) {
+        Turno turno = new Turno(tutor, materia, inicio, fin, Modalidad.VIRTUAL, LINK, null);
+        turno.setEstado(EstadoTurno.ASIGNADO);
+        ReflectionTestUtils.setField(turno, "id", id);
+        return turno;
+    }
+
+    private Reserva reservaActiva(Turno turno) {
+        Usuario estudiante = new Usuario("Juan", "Pérez", "juan@mail.com", "hash", Rol.ESTUDIANTE, true);
+        return new Reserva(turno, estudiante, AHORA.minusDays(1), "Repasar derivadas");
+    }
+
+    @Test
+    void turnoAsignadoTerminadoHaceUnMinutoPasaAFinalizadoYSuReservaAFinalizada() {
+        Turno turno = turnoAsignado(1L, AHORA.minusMinutes(61), AHORA.minusMinutes(1));
+        Reserva reserva = reservaActiva(turno);
+        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of(turno));
+        when(reservaRepository.findByTurno_IdAndEstado(1L, EstadoReserva.ACTIVA)).thenReturn(Optional.of(reserva));
+
+        service.finalizarTurnosTerminados();
+
+        assertEquals(EstadoTurno.FINALIZADO, turno.getEstado());
+        assertEquals(EstadoReserva.FINALIZADA, reserva.getEstado());
+        verify(turnoRepository).saveAll(List.of(turno));
+        verify(reservaRepository).save(reserva);
+    }
+
+    @Test
+    void turnoQueTerminaExactamenteAhoraPasaAFinalizado() {
+        Turno turno = turnoAsignado(2L, AHORA.minusMinutes(60), AHORA);
+        Reserva reserva = reservaActiva(turno);
+        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of(turno));
+        when(reservaRepository.findByTurno_IdAndEstado(2L, EstadoReserva.ACTIVA)).thenReturn(Optional.of(reserva));
+
+        service.finalizarTurnosTerminados();
+
+        assertEquals(EstadoTurno.FINALIZADO, turno.getEstado());
+        assertEquals(EstadoReserva.FINALIZADA, reserva.getEstado());
+    }
+
+    @Test
+    void variosTurnosTerminadosSeFinalizanTodos() {
+        Turno turno1 = turnoAsignado(1L, AHORA.minusMinutes(120), AHORA.minusMinutes(60));
+        Turno turno2 = turnoAsignado(2L, AHORA.minusMinutes(60), AHORA);
+        Reserva reserva1 = reservaActiva(turno1);
+        Reserva reserva2 = reservaActiva(turno2);
+        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of(turno1, turno2));
+        when(reservaRepository.findByTurno_IdAndEstado(1L, EstadoReserva.ACTIVA)).thenReturn(Optional.of(reserva1));
+        when(reservaRepository.findByTurno_IdAndEstado(2L, EstadoReserva.ACTIVA)).thenReturn(Optional.of(reserva2));
+
+        service.finalizarTurnosTerminados();
+
+        assertEquals(EstadoTurno.FINALIZADO, turno1.getEstado());
+        assertEquals(EstadoTurno.FINALIZADO, turno2.getEstado());
+        assertEquals(EstadoReserva.FINALIZADA, reserva1.getEstado());
+        assertEquals(EstadoReserva.FINALIZADA, reserva2.getEstado());
+    }
+
+    // Solo se busca la reserva ACTIVA del turno, así que las CANCELADAS nunca llegan acá.
+    @Test
+    void turnoSinReservaActivaSeFinalizaSinModificarReservas() {
+        Turno turno = turnoAsignado(3L, AHORA.minusMinutes(61), AHORA.minusMinutes(1));
+        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of(turno));
+        when(reservaRepository.findByTurno_IdAndEstado(3L, EstadoReserva.ACTIVA)).thenReturn(Optional.empty());
+
+        service.finalizarTurnosTerminados();
+
+        assertEquals(EstadoTurno.FINALIZADO, turno.getEstado());
+        verify(reservaRepository, never()).save(any());
+    }
+
+    // Qué turnos se finalizan (solo ASIGNADOS con fin <= ahora) lo decide la consulta
+    // buscarAsignadosTerminados; con el repositorio mockeado no se puede probar acá.
+    // Este test comprueba que, si la consulta no trae turnos, no se modifica nada.
+    @Test
+    void sinTurnosTerminadosNoModificaNada() {
+        when(turnoRepository.buscarAsignadosTerminados(AHORA)).thenReturn(List.of());
+
+        service.finalizarTurnosTerminados();
+
+        verify(reservaRepository, never()).save(any());
+        verify(turnoRepository).saveAll(List.of());
     }
 }

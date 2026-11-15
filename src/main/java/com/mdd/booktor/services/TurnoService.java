@@ -11,4 +11,5 @@ public interface TurnoService {
     List<TurnoResponse> generarBloque(BloqueTurnosRequest request);
     List<TurnoTutorResponse> listarProximosDeTutor(Long tutorId);
     TurnoResponse darDeBaja(Long id, BajaTurnoRequest request);
+    void finalizarTurnosTerminados();
 }
