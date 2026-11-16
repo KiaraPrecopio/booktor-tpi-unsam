@@ -1,6 +1,7 @@
 package com.mdd.booktor.controllers;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mdd.booktor.dtos.CancelacionRequest;
 import com.mdd.booktor.dtos.ReservaRequest;
 import com.mdd.booktor.dtos.ReservaResponse;
 import com.mdd.booktor.services.ReservaService;
@@ -30,14 +30,14 @@ public class ReservaController {
     }
 
     @PostMapping
-    public ResponseEntity<ReservaResponse> reservar(@Valid @RequestBody ReservaRequest request) {
-        ReservaResponse creada = reservaService.reservar(request);
+    public ResponseEntity<ReservaResponse> reservar(@Valid @RequestBody ReservaRequest request, Principal principal) {
+        ReservaResponse creada = reservaService.reservar(request, principal.getName());
         return ResponseEntity.created(URI.create("/api/reservas/" + creada.id())).body(creada);
     }
 
     @PatchMapping("/{id}/cancelacion")
-    public ResponseEntity<ReservaResponse> cancelar(@PathVariable Long id, @Valid @RequestBody CancelacionRequest request) {
-        return ResponseEntity.ok(reservaService.cancelar(id, request));
+    public ResponseEntity<ReservaResponse> cancelar(@PathVariable Long id, Principal principal) {
+        return ResponseEntity.ok(reservaService.cancelar(id, principal.getName()));
     }
 
     @GetMapping("/activas")
@@ -45,8 +45,8 @@ public class ReservaController {
         return ResponseEntity.ok(reservaService.listarActivasFuturas());
     }
 
-    @GetMapping("/estudiante/{estudianteId}")
-    public ResponseEntity<List<ReservaResponse>> listarProximasDeEstudiante(@PathVariable Long estudianteId) {
-        return ResponseEntity.ok(reservaService.listarProximasDeEstudiante(estudianteId));
+    @GetMapping("/mis-reservas")
+    public ResponseEntity<List<ReservaResponse>> listarMisReservas(Principal principal) {
+        return ResponseEntity.ok(reservaService.listarProximasDeEstudiante(principal.getName()));
     }
 }

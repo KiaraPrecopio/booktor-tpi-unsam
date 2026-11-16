@@ -1,5 +1,6 @@
 package com.mdd.booktor.controllers;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.mdd.booktor.dtos.BajaTurnoRequest;
 import com.mdd.booktor.dtos.BloqueTurnosRequest;
 import com.mdd.booktor.dtos.TurnoResponse;
 import com.mdd.booktor.dtos.TurnoTutorResponse;
@@ -31,17 +31,18 @@ public class TurnoController {
     }
 
     @PostMapping("/bloques")
-    public ResponseEntity<List<TurnoResponse>> generarBloque(@Valid @RequestBody BloqueTurnosRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(turnoService.generarBloque(request));
+    public ResponseEntity<List<TurnoResponse>> generarBloque(@Valid @RequestBody BloqueTurnosRequest request,
+            Principal principal) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(turnoService.generarBloque(request, principal.getName()));
     }
 
-    @GetMapping("/tutor/{tutorId}")
-    public ResponseEntity<List<TurnoTutorResponse>> listarProximosDeTutor(@PathVariable Long tutorId) {
-        return ResponseEntity.ok(turnoService.listarProximosDeTutor(tutorId));
+    @GetMapping("/mis-turnos")
+    public ResponseEntity<List<TurnoTutorResponse>> listarMisTurnos(Principal principal) {
+        return ResponseEntity.ok(turnoService.listarProximosDeTutor(principal.getName()));
     }
 
     @PatchMapping("/{id}/baja")
-    public ResponseEntity<TurnoResponse> darDeBaja(@PathVariable Long id, @Valid @RequestBody BajaTurnoRequest request) {
-        return ResponseEntity.ok(turnoService.darDeBaja(id, request));
+    public ResponseEntity<TurnoResponse> darDeBaja(@PathVariable Long id, Principal principal) {
+        return ResponseEntity.ok(turnoService.darDeBaja(id, principal.getName()));
     }
 }

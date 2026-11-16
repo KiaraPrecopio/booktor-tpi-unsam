@@ -9,7 +9,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record BloqueTurnosRequest(
-    @NotNull(message = "El tutor es obligatorio") Long tutorId,
     @NotNull(message = "La materia es obligatoria") Long materiaId,
     @NotNull(message = "La fecha es obligatoria") LocalDate fecha,
     @NotNull(message = "La hora desde es obligatoria") LocalTime horaDesde,

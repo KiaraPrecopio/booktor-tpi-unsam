@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mdd.booktor.dtos.BajaTurnoRequest;
 import com.mdd.booktor.dtos.BloqueTurnosRequest;
 import com.mdd.booktor.dtos.TurnoResponse;
 import com.mdd.booktor.dtos.TurnoTutorResponse;
@@ -60,9 +59,8 @@ public class TurnoServiceImpl implements TurnoService {
 
     @Override
     @Transactional
-    public List<TurnoResponse> generarBloque(BloqueTurnosRequest request) {
-        Usuario tutor = usuarioRepository.findByIdAndRolAndActivoTrue(request.tutorId(), Rol.TUTOR)
-            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un tutor activo con el id [" + request.tutorId() + "]."));
+    public List<TurnoResponse> generarBloque(BloqueTurnosRequest request, String emailTutor) {
+        Usuario tutor = buscarTutor(emailTutor);
 
         Materia materia = materiaRepository.findByIdAndActivoTrue(request.materiaId())
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe una materia activa con el id [" + request.materiaId() + "]."));
@@ -99,7 +97,7 @@ public class TurnoServiceImpl implements TurnoService {
             lugar = request.lugar().trim();
         }
 
-        List<Turno> superpuestos = turnoRepository.buscarSuperpuestos(request.tutorId(), inicioBloque, finBloque);
+        List<Turno> superpuestos = turnoRepository.buscarSuperpuestos(tutor.getId(), inicioBloque, finBloque);
         if (!superpuestos.isEmpty()) {
             String horarios = superpuestos.stream()
                     .map(t -> t.getInicio().format(FORMATO_INICIO) + "-" + t.getFin().format(FORMATO_FIN))
@@ -119,9 +117,8 @@ public class TurnoServiceImpl implements TurnoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TurnoTutorResponse> listarProximosDeTutor(Long tutorId) {
-        usuarioRepository.findByIdAndRolAndActivoTrue(tutorId, Rol.TUTOR)
-            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un tutor activo con el id [" + tutorId + "]."));
+    public List<TurnoTutorResponse> listarProximosDeTutor(String emailTutor) {
+        Long tutorId = buscarTutor(emailTutor).getId();
 
         LocalDateTime ahora = LocalDateTime.now(clock);
         List<Turno> turnos = turnoRepository.buscarFuturosDeTutor(tutorId,
@@ -139,11 +136,12 @@ public class TurnoServiceImpl implements TurnoService {
 
     @Override
     @Transactional
-    public TurnoResponse darDeBaja(Long id, BajaTurnoRequest request) {
+    public TurnoResponse darDeBaja(Long id, String emailTutor) {
+        Usuario tutor = buscarTutor(emailTutor);
         Turno turno = turnoRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe un turno con el id [" + id + "]."));
 
-        if (!Objects.equals(turno.getTutor().getId(), request.tutorId())) {
+        if (!Objects.equals(turno.getTutor().getId(), tutor.getId())) {
             throw new AccesoDenegadoException("Solo el tutor del turno puede darlo de baja.");
         }
 
@@ -181,6 +179,11 @@ public class TurnoServiceImpl implements TurnoService {
         }
 
         turnoRepository.saveAll(turnos);
+    }
+
+    private Usuario buscarTutor(String email) {
+        return usuarioRepository.findByEmailIgnoreCaseAndRolAndActivoTrue(email, Rol.TUTOR)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un tutor activo con el email [" + email + "]."));
     }
 
     private TurnoTutorResponse toTurnoTutorResponse(Turno turno, Reserva reserva) {
