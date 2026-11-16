@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Modificar materia - Booktor</title>
+</head>
+<body>
+<h1>Modificar materia</h1>
+<form action="/admin/materias/modificar" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+    <input type="hidden" name="id" th:value="${materia.id}">
+    <p>
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" maxlength="100" required th:value="${materia.nombre}">
+    </p>
+    <p>
+        <label for="descripcion">Descripción</label>
+        <input type="text" id="descripcion" name="descripcion" maxlength="255" th:value="${materia.descripcion}">
+    </p>
+    <button type="submit">Guardar</button>
+</form>
+
+<p><a href="/admin/materias">Volver a materias</a></p>
+
+<p><a href="/admin">Volver al menú</a></p>
+</body>
+</html>

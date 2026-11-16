@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Estudiantes - Booktor</title>
+</head>
+<body>
+<h1>Estudiantes</h1>
+<table border="1">
+    <tr><th>Nombre</th><th>Email</th><th>Adaptaciones</th><th></th><th></th></tr>
+    <tr th:each="x : ${estudiantes}">
+        <td th:text="${x.nombre + ' ' + x.apellido}"></td>
+        <td th:text="${x.email}"></td>
+        <td><span th:each="a : ${x.adaptaciones}" th:text="${a.nombre + '. '}"></span></td>
+        <td><form action="/admin/estudiantes/editar" method="get">
+            <input type="hidden" name="id" th:value="${x.id}">
+            <button type="submit">Editar</button>
+        </form></td>
+        <td><form action="/admin/estudiantes/baja" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+            <input type="hidden" name="id" th:value="${x.id}">
+            <button type="submit">Dar de baja</button>
+        </form></td>
+    </tr>
+</table>
+
+<h2>Nuevo estudiante</h2>
+<form action="/admin/estudiantes" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+    <p>
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" maxlength="100" required>
+    </p>
+    <p>
+        <label for="apellido">Apellido</label>
+        <input type="text" id="apellido" name="apellido" maxlength="100" required>
+    </p>
+    <p>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" maxlength="150" required>
+    </p>
+    <p>
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" minlength="8" maxlength="72" required>
+    </p>
+    <p>Adaptaciones que necesita:</p>
+    <div th:each="a : ${adaptaciones}">
+        <input type="checkbox" name="adaptacionIds" th:value="${a.id}">
+        <span th:text="${a.nombre}"></span>
+    </div>
+    <button type="submit">Dar de alta</button>
+</form>
+
+<p><a href="/admin">Volver al menú</a></p>
+</body>
+</html>

@@ -8,11 +8,12 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 // Traduce las excepciones de los services a respuestas HTTP (ProblemDetail).
-// Los controllers no atrapan excepciones: los services las lanzan y esta clase responde.
-@RestControllerAdvice
+// Solo atiende a los @RestController: las páginas usan WebControllerAdvice.
+@RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Reservas activas - Booktor</title>
+</head>
+<body>
+<h1>Reservas activas</h1>
+<p th:if="${reservas.isEmpty()}">No hay reservas activas.</p>
+
+<table border="1" th:if="${!reservas.isEmpty()}">
+    <tr><th>Estudiante</th><th>Tutor</th><th>Materia</th><th>Inicio</th><th>Modalidad</th><th>Objetivo</th><th></th></tr>
+    <tr th:each="r : ${reservas}">
+        <td th:text="${r.estudiante}"></td>
+        <td th:text="${r.tutor}"></td>
+        <td th:text="${r.materia}"></td>
+        <td th:text="${#temporals.format(r.inicio, 'dd/MM/yyyy HH:mm')}"></td>
+        <td th:text="${r.modalidad}"></td>
+        <td th:text="${r.objetivo}"></td>
+        <td><form action="/admin/reservas/cancelar" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+            <input type="hidden" name="reservaId" th:value="${r.id}">
+            <button type="submit">Cancelar</button>
+        </form></td>
+    </tr>
+</table>
+
+<p><a href="/admin">Volver al menú</a></p>
+</body>
+</html>

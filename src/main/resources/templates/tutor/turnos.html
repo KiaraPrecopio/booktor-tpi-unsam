@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis turnos - Booktor</title>
+</head>
+<body>
+<h1>Mis turnos</h1>
+<p th:if="${turnos.isEmpty()}">No tenés turnos próximos.</p>
+
+<table border="1" th:if="${!turnos.isEmpty()}">
+    <tr><th>Materia</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Modalidad</th><th>Link o lugar</th><th>Estudiante</th><th>Objetivo</th><th></th></tr>
+    <tr th:each="t : ${turnos}">
+        <td th:text="${t.materia}"></td>
+        <td th:text="${#temporals.format(t.inicio, 'dd/MM/yyyy HH:mm')}"></td>
+        <td th:text="${#temporals.format(t.fin, 'HH:mm')}"></td>
+        <td th:text="${t.estado}"></td>
+        <td th:text="${t.modalidad}"></td>
+        <td><span th:text="${t.link}"></span><span th:text="${t.lugar}"></span></td>
+        <td th:text="${t.estudiante}"></td>
+        <td th:text="${t.objetivo}"></td>
+        <td>
+            <div th:if="${t.reservaId == null}">
+        <form action="/tutor/turnos/baja" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+            <input type="hidden" name="turnoId" th:value="${t.id}">
+            <button type="submit">Dar de baja</button>
+        </form>
+            </div>
+            <div th:if="${t.reservaId != null}">
+        <form action="/tutor/reservas/cancelar" method="post">
+            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+            <input type="hidden" name="reservaId" th:value="${t.reservaId}">
+            <button type="submit">Cancelar reserva</button>
+        </form>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<p><a href="/tutor">Volver al menú</a></p>
+</body>
+</html>

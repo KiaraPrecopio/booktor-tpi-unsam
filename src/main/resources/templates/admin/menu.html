@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Menú del administrador - Booktor</title>
+</head>
+<body>
+<h1>Menú del administrador</h1>
+<ul>
+    <li><a href="/admin/materias">Materias</a></li>
+    <li><a href="/admin/adaptaciones">Adaptaciones</a></li>
+    <li><a href="/admin/estudiantes">Estudiantes</a></li>
+    <li><a href="/admin/tutores">Tutores</a></li>
+    <li><a href="/admin/reservas">Reservas activas</a></li>
+</ul>
+
+<form action="/logout" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+    <button type="submit">Cerrar sesión</button>
+</form>
+
+</body>
+</html>

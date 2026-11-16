@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tutores disponibles - Booktor</title>
+</head>
+<body>
+<h1>Tutores disponibles</h1>
+<h2 th:text="${materia.nombre}"></h2>
+
+<form action="/estudiante/tutores" method="get">
+    <input type="hidden" name="materiaId" th:value="${materia.id}">
+    <p>Adaptaciones que necesito:</p>
+    <div th:each="a : ${adaptaciones}">
+        <input type="checkbox" name="adaptaciones" th:value="${a.id}" th:checked="${seleccionadas.contains(a.id)}">
+        <span th:text="${a.nombre}"></span>
+    </div>
+    <p>
+        <label for="modalidad">Modalidad</label>
+        <select id="modalidad" name="modalidad">
+            <option value="">Cualquiera</option>
+            <option value="VIRTUAL" th:selected="${modalidad == 'VIRTUAL'}">Virtual</option>
+            <option value="PRESENCIAL" th:selected="${modalidad == 'PRESENCIAL'}">Presencial</option>
+        </select>
+    </p>
+    <button type="submit">Filtrar</button>
+</form>
+
+<p th:if="${tutores.isEmpty()}">No hay tutores con turnos disponibles para esos filtros.</p>
+
+<div th:each="t : ${tutores}">
+    <h3 th:text="${t.nombre + ' ' + t.apellido}"></h3>
+    <p>Adaptaciones que ofrece:</p>
+    <ul>
+        <li th:each="a : ${t.adaptaciones}" th:text="${a.nombre}"></li>
+    </ul>
+    <table border="1">
+        <tr><th>Inicio</th><th>Fin</th><th>Modalidad</th><th>Reservar</th></tr>
+        <tr th:each="turno : ${t.turnos}">
+            <td th:text="${#temporals.format(turno.inicio, 'dd/MM/yyyy HH:mm')}"></td>
+            <td th:text="${#temporals.format(turno.fin, 'HH:mm')}"></td>
+            <td th:text="${turno.modalidad}"></td>
+            <td>
+                <form action="/estudiante/reservas" method="post">
+                    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                    <input type="hidden" name="turnoId" th:value="${turno.id}">
+                    <input type="text" name="objetivo" maxlength="500" placeholder="Objetivo (opcional)">
+                    <button type="submit">Reservar turno</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<p><a href="/estudiante/buscar">Volver a la búsqueda</a></p>
+
+<p><a href="/estudiante">Volver al menú</a></p>
+</body>
+</html>
