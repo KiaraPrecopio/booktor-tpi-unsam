@@ -91,13 +91,13 @@ class SeguridadTest {
     @Test
     @WithMockUser(roles = "ADMINISTRADOR")
     void administradorNoGeneraTurnos() throws Exception {
-        mockMvc.perform(get("/api/turnos/tutor/1")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/turnos/mis-turnos")).andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(roles = "TUTOR")
     void tutorVeSusTurnos() throws Exception {
-        mockMvc.perform(get("/api/turnos/tutor/1")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/turnos/mis-turnos")).andExpect(status().isOk());
     }
 
     @Test
@@ -121,8 +121,7 @@ class SeguridadTest {
     @Test
     @WithMockUser(roles = "TUTOR")
     void tutorPuedeCancelarUnaReserva() throws Exception {
-        mockMvc.perform(patch("/api/reservas/7/cancelacion").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"usuarioId\": 1}"))
+        mockMvc.perform(patch("/api/reservas/7/cancelacion"))
                 .andExpect(status().isOk());
     }
 
@@ -135,7 +134,7 @@ class SeguridadTest {
     @Test
     @WithMockUser(roles = "ESTUDIANTE")
     void estudianteVeSusReservas() throws Exception {
-        mockMvc.perform(get("/api/reservas/estudiante/5")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/reservas/mis-reservas")).andExpect(status().isOk());
     }
 
     @Test

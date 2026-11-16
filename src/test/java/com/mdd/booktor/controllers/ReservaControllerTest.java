@@ -1,11 +1,13 @@
 package com.mdd.booktor.controllers;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +38,10 @@ class ReservaControllerTest {
 
     private static final LocalDateTime INICIO = LocalDateTime.of(2026, 11, 20, 14, 0);
     private static final String RESERVA = """
-            {"estudianteId": 5, "turnoId": 10, "objetivo": "Repasar derivadas"}
+            {"turnoId": 10, "objetivo": "Repasar derivadas"}
             """;
-    private static final String CANCELACION = "{\"usuarioId\": 5}";
+
+    private static final Principal ESTUDIANTE = () -> "juan@mail.com";
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,9 +59,9 @@ class ReservaControllerTest {
 
     @Test
     void reservarDevuelve201ConLaUbicacionDeLaReserva() throws Exception {
-        when(reservaService.reservar(any())).thenReturn(reserva(EstadoReserva.ACTIVA, null));
+        when(reservaService.reservar(any(), any())).thenReturn(reserva(EstadoReserva.ACTIVA, null));
 
-        mockMvc.perform(post("/api/reservas").contentType(MediaType.APPLICATION_JSON).content(RESERVA))
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON).content(RESERVA))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/reservas/7"))
                 .andExpect(jsonPath("$.estado").value("ACTIVA"))
@@ -69,9 +72,9 @@ class ReservaControllerTest {
     @Test
     void reservarTurnoYaReservadoDevuelve409() throws Exception {
         String mensaje = "El turno no está disponible para reservar.";
-        when(reservaService.reservar(any())).thenThrow(new ConflictoException(mensaje));
+        when(reservaService.reservar(any(), any())).thenThrow(new ConflictoException(mensaje));
 
-        mockMvc.perform(post("/api/reservas").contentType(MediaType.APPLICATION_JSON).content(RESERVA))
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON).content(RESERVA))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(mensaje));
     }
@@ -79,9 +82,9 @@ class ReservaControllerTest {
     @Test
     void reservarTurnoSuperpuestoDevuelve409ConElTurnoQueChoca() throws Exception {
         String mensaje = "El estudiante ya tiene una reserva que se superpone con este turno: 20/11/2026 14:00 a 15:00.";
-        when(reservaService.reservar(any())).thenThrow(new ConflictoException(mensaje));
+        when(reservaService.reservar(any(), any())).thenThrow(new ConflictoException(mensaje));
 
-        mockMvc.perform(post("/api/reservas").contentType(MediaType.APPLICATION_JSON).content(RESERVA))
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON).content(RESERVA))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(mensaje));
     }
@@ -89,9 +92,9 @@ class ReservaControllerTest {
     @Test
     void reservarTurnoQueYaEmpezoDevuelve409() throws Exception {
         String mensaje = "Solo se puede reservar hasta 5 minutos antes del inicio del turno.";
-        when(reservaService.reservar(any())).thenThrow(new ConflictoException(mensaje));
+        when(reservaService.reservar(any(), any())).thenThrow(new ConflictoException(mensaje));
 
-        mockMvc.perform(post("/api/reservas").contentType(MediaType.APPLICATION_JSON).content(RESERVA))
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON).content(RESERVA))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(mensaje));
     }
@@ -100,8 +103,8 @@ class ReservaControllerTest {
     void reservarConObjetivoDeMasDe500CaracteresDevuelve400() throws Exception {
         String objetivo = "a".repeat(501);
 
-        mockMvc.perform(post("/api/reservas").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"estudianteId\": 5, \"turnoId\": 10, \"objetivo\": \"" + objetivo + "\"}"))
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"turnoId\": 10, \"objetivo\": \"" + objetivo + "\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores.objetivo").value("El objetivo no puede superar los 500 caracteres"));
 
@@ -110,7 +113,7 @@ class ReservaControllerTest {
 
     @Test
     void reservarSinTurnoDevuelve400() throws Exception {
-        mockMvc.perform(post("/api/reservas").contentType(MediaType.APPLICATION_JSON).content("{\"estudianteId\": 5}"))
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errores.turnoId").value("El turno es obligatorio"));
 
@@ -121,7 +124,7 @@ class ReservaControllerTest {
     void cancelarDevuelve200ConQuienCancelo() throws Exception {
         when(reservaService.cancelar(eq(7L), any())).thenReturn(reserva(EstadoReserva.CANCELADA, Rol.ESTUDIANTE));
 
-        mockMvc.perform(patch("/api/reservas/7/cancelacion").contentType(MediaType.APPLICATION_JSON).content(CANCELACION))
+        mockMvc.perform(patch("/api/reservas/7/cancelacion").principal(ESTUDIANTE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("CANCELADA"))
                 .andExpect(jsonPath("$.canceladaPor").value("ESTUDIANTE"))
@@ -133,7 +136,7 @@ class ReservaControllerTest {
         String mensaje = "Solo se pueden cancelar reservas activas.";
         when(reservaService.cancelar(eq(7L), any())).thenThrow(new ConflictoException(mensaje));
 
-        mockMvc.perform(patch("/api/reservas/7/cancelacion").contentType(MediaType.APPLICATION_JSON).content(CANCELACION))
+        mockMvc.perform(patch("/api/reservas/7/cancelacion").principal(ESTUDIANTE))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(mensaje));
     }
@@ -143,7 +146,7 @@ class ReservaControllerTest {
         String mensaje = "No se puede cancelar la reserva de un turno que ya empezó.";
         when(reservaService.cancelar(eq(7L), any())).thenThrow(new ConflictoException(mensaje));
 
-        mockMvc.perform(patch("/api/reservas/7/cancelacion").contentType(MediaType.APPLICATION_JSON).content(CANCELACION))
+        mockMvc.perform(patch("/api/reservas/7/cancelacion").principal(ESTUDIANTE))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value(mensaje));
     }
@@ -153,8 +156,7 @@ class ReservaControllerTest {
         String mensaje = "Solo pueden cancelar la reserva el estudiante que reservó, el tutor del turno o un administrador.";
         when(reservaService.cancelar(eq(7L), any())).thenThrow(new AccesoDenegadoException(mensaje));
 
-        mockMvc.perform(patch("/api/reservas/7/cancelacion").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"usuarioId\": 99}"))
+        mockMvc.perform(patch("/api/reservas/7/cancelacion").principal(ESTUDIANTE))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.detail").value(mensaje));
     }
@@ -171,11 +173,21 @@ class ReservaControllerTest {
 
     @Test
     void listarProximasDeEstudianteDevuelveElLinkDeLaReunion() throws Exception {
-        when(reservaService.listarProximasDeEstudiante(5L)).thenReturn(List.of(reserva(EstadoReserva.ACTIVA, null)));
+        when(reservaService.listarProximasDeEstudiante("juan@mail.com")).thenReturn(List.of(reserva(EstadoReserva.ACTIVA, null)));
 
-        mockMvc.perform(get("/api/reservas/estudiante/5"))
+        mockMvc.perform(get("/api/reservas/mis-reservas").principal(ESTUDIANTE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].tutor").value("Juan Gómez"))
                 .andExpect(jsonPath("$[0].link").value("https://meet.google.com/abc"));
+    }
+
+    @Test
+    void laReservaSeHaceANombreDelEstudianteDeLaSesion() throws Exception {
+        when(reservaService.reservar(any(), any())).thenReturn(reserva(EstadoReserva.ACTIVA, null));
+
+        mockMvc.perform(post("/api/reservas").principal(ESTUDIANTE).contentType(MediaType.APPLICATION_JSON).content(RESERVA))
+                .andExpect(status().isCreated());
+
+        verify(reservaService).reservar(any(), eq("juan@mail.com"));
     }
 }
