@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio - Booktor</title>
+</head>
+<body>
+<h1>Booktor</h1>
+<p>Iniciaste sesión.</p>
+
+<form action="/logout" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+    <button type="submit">Cerrar sesión</button>
+</form>
+</body>
+</html>

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +29,7 @@ import com.mdd.booktor.services.BusquedaService;
 
 // Pruebas del controller de búsqueda (#12): disponibilidad en JSON y filtros.
 @WebMvcTest(BusquedaController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class BusquedaControllerTest {
 
     private static final LocalDateTime INICIO = LocalDateTime.of(2026, 11, 20, 14, 0);
