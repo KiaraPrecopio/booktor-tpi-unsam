@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +31,7 @@ import com.mdd.booktor.services.TurnoService;
 
 // Pruebas del controller de turnos (#11 y la baja del #15).
 @WebMvcTest(TurnoController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class TurnoControllerTest {
 
     private static final LocalDateTime INICIO = LocalDateTime.of(2026, 11, 20, 14, 0);
