@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/turnos/**").hasRole(TUTOR)
                 .requestMatchers("/api/busqueda/**").hasRole(ESTUDIANTE)
                 .requestMatchers(HttpMethod.POST, "/api/reservas").hasRole(ESTUDIANTE)
-                .requestMatchers("/api/reservas/estudiante/**").hasRole(ESTUDIANTE)
+                .requestMatchers("/api/reservas/mis-reservas").hasRole(ESTUDIANTE)
                 .requestMatchers("/api/reservas/activas").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PATCH, "/api/reservas/*/cancelacion").hasAnyRole(ADMIN, TUTOR, ESTUDIANTE)
                 .anyRequest().authenticated())

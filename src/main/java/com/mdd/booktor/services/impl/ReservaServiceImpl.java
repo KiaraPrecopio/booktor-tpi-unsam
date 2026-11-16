@@ -11,7 +11,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mdd.booktor.dtos.CancelacionRequest;
 import com.mdd.booktor.dtos.ReservaRequest;
 import com.mdd.booktor.dtos.ReservaResponse;
 import com.mdd.booktor.exceptions.AccesoDenegadoException;
@@ -51,9 +50,8 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     @Transactional
-    public ReservaResponse reservar(ReservaRequest request) {
-        Usuario estudiante = usuarioRepository.findByIdAndRolAndActivoTrue(request.estudianteId(), Rol.ESTUDIANTE)
-            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un estudiante activo con el id [" + request.estudianteId() + "]."));
+    public ReservaResponse reservar(ReservaRequest request, String emailEstudiante) {
+        Usuario estudiante = buscarEstudiante(emailEstudiante);
 
         Turno turno = turnoRepository.findById(request.turnoId())
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe un turno con el id [" + request.turnoId() + "]."));
@@ -71,7 +69,7 @@ public class ReservaServiceImpl implements ReservaService {
             throw new ConflictoException("Solo se puede reservar hasta " + MINUTOS_MINIMOS_ANTES + " minutos antes del inicio del turno.");
         }
 
-        List<Reserva> superpuestas = reservaRepository.buscarActivasSuperpuestas(request.estudianteId(), turno.getInicio(), turno.getFin());
+        List<Reserva> superpuestas = reservaRepository.buscarActivasSuperpuestas(estudiante.getId(), turno.getInicio(), turno.getFin());
         if (!superpuestas.isEmpty()) {
             String turnos = superpuestas.stream()
                     .map(r -> r.getTurno().getMateria().getNombre() + " " + r.getTurno().getInicio().format(FORMATO_INICIO)
@@ -96,13 +94,12 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     @Transactional
-    public ReservaResponse cancelar(Long id, CancelacionRequest request) {
+    public ReservaResponse cancelar(Long id, String emailUsuario) {
         Reserva reserva = reservaRepository.findById(id)
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe una reserva con el id [" + id + "]."));
 
-        Usuario usuario = usuarioRepository.findById(request.usuarioId())
-            .filter(Usuario::isActivo)
-            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un usuario activo con el id [" + request.usuarioId() + "]."));
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCaseAndActivoTrue(emailUsuario)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un usuario activo con el email [" + emailUsuario + "]."));
 
         Turno turno = reserva.getTurno();
         boolean puedeCancelar = switch (usuario.getRol()) {
@@ -143,12 +140,16 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReservaResponse> listarProximasDeEstudiante(Long estudianteId) {
-        usuarioRepository.findByIdAndRolAndActivoTrue(estudianteId, Rol.ESTUDIANTE)
-            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un estudiante activo con el id [" + estudianteId + "]."));
+    public List<ReservaResponse> listarProximasDeEstudiante(String emailEstudiante) {
+        Long estudianteId = buscarEstudiante(emailEstudiante).getId();
 
         return reservaRepository.buscarActivasFuturasDeEstudiante(estudianteId, LocalDateTime.now(clock)).stream()
                 .map(ReservaMapper::toResponse)
                 .toList();
+    }
+
+    private Usuario buscarEstudiante(String email) {
+        return usuarioRepository.findByEmailIgnoreCaseAndRolAndActivoTrue(email, Rol.ESTUDIANTE)
+            .orElseThrow(() -> new RecursoNoEncontradoException("No existe un estudiante activo con el email [" + email + "]."));
     }
 }
