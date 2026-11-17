@@ -2,48 +2,66 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
     <title>Generar turnos - Booktor</title>
 </head>
-<body>
-<h1>Generar turnos</h1>
-<p>Se crean turnos seguidos de la duración que tenés configurada, desde la hora inicial hasta la final.</p>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/tutor">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="/tutor/turnos">Mis turnos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Generar turnos</li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-2">Generar turnos</h1>
+    <p class="text-secondary mb-4">Se crean turnos seguidos de la duración que tenés configurada, desde la hora inicial hasta la final.</p>
 
-<form action="/tutor/turnos" method="post">
-    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
-    <p>
-        <label for="materiaId">Materia</label>
-        <select id="materiaId" name="materiaId" required>
-            <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"></option>
-        </select>
-    </p>
-    <p>
-        <label for="fecha">Fecha</label>
-        <input type="date" id="fecha" name="fecha" required>
-    </p>
-    <p>
-        <label for="horaDesde">Desde</label>
-        <input type="time" id="horaDesde" name="horaDesde" required>
-        <label for="horaHasta">Hasta</label>
-        <input type="time" id="horaHasta" name="horaHasta" required>
-    </p>
-    <p>
-        <label for="modalidad">Modalidad</label>
-        <select id="modalidad" name="modalidad" required>
-            <option value="VIRTUAL">Virtual</option>
-            <option value="PRESENCIAL">Presencial</option>
-        </select>
-    </p>
-    <p>
-        <label for="link">Link (si es virtual)</label>
-        <input type="url" id="link" name="link" maxlength="255">
-    </p>
-    <p>
-        <label for="lugar">Lugar (si es presencial)</label>
-        <input type="text" id="lugar" name="lugar" maxlength="255">
-    </p>
-    <button type="submit">Generar turnos</button>
-</form>
-
-<p><a href="/tutor">Volver al menú</a></p>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/tutor/turnos" method="post">
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="materiaId">Materia</label>
+                        <select class="form-select" id="materiaId" name="materiaId" required>
+                            <option th:each="m : ${materias}" th:value="${m.id}" th:text="${m.nombre}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="fecha">Fecha</label>
+                        <input class="form-control" type="date" id="fecha" name="fecha" required>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label" for="horaDesde">Desde</label>
+                        <input class="form-control" type="time" id="horaDesde" name="horaDesde" required>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label" for="horaHasta">Hasta</label>
+                        <input class="form-control" type="time" id="horaHasta" name="horaHasta" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="modalidad">Modalidad</label>
+                        <select class="form-select" id="modalidad" name="modalidad" required>
+                            <option value="VIRTUAL">Virtual</option>
+                            <option value="PRESENCIAL">Presencial</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="link">Link (si es virtual)</label>
+                        <input class="form-control" type="url" id="link" name="link" maxlength="255">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="lugar">Lugar (si es presencial)</label>
+                        <input class="form-control" type="text" id="lugar" name="lugar" maxlength="255">
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="submit">Generar turnos</button>
+            </form>
+        </div>
+    </div>
+</main>
 </body>
 </html>

@@ -2,26 +2,38 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
     <title>Modificar materia - Booktor</title>
 </head>
-<body>
-<h1>Modificar materia</h1>
-<form action="/admin/materias/modificar" method="post">
-    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
-    <input type="hidden" name="id" th:value="${materia.id}">
-    <p>
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" name="nombre" maxlength="100" required th:value="${materia.nombre}">
-    </p>
-    <p>
-        <label for="descripcion">Descripción</label>
-        <input type="text" id="descripcion" name="descripcion" maxlength="255" th:value="${materia.descripcion}">
-    </p>
-    <button type="submit">Guardar</button>
-</form>
-
-<p><a href="/admin/materias">Volver a materias</a></p>
-
-<p><a href="/admin">Volver al menú</a></p>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="/admin/materias">Materias</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modificar materia</li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-4">Modificar materia</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/materias/modificar" method="post">
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                <input type="hidden" name="id" th:value="${materia.id}">
+                <div class="mb-3">
+                    <label class="form-label" for="nombre">Nombre</label>
+                    <input class="form-control" type="text" id="nombre" name="nombre" maxlength="100" required th:value="${materia.nombre}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="descripcion">Descripción</label>
+                    <input class="form-control" type="text" id="descripcion" name="descripcion" maxlength="255" th:value="${materia.descripcion}">
+                </div>
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </form>
+        </div>
+    </div>
+</main>
 </body>
 </html>

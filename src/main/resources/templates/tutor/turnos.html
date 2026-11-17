@@ -2,42 +2,56 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
     <title>Mis turnos - Booktor</title>
 </head>
-<body>
-<h1>Mis turnos</h1>
-<p th:if="${turnos.isEmpty()}">No tenés turnos próximos.</p>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/tutor">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Mis turnos</li>
+        </ol>
+    </nav>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h1 class="h3 mb-0">Mis turnos</h1>
+        <a class="btn btn-primary" href="/tutor/turnos/nuevo">Generar turnos</a>
+    </div>
+    <div class="alert alert-info" th:if="${turnos.isEmpty()}">No tenés turnos próximos.</div>
 
-<table border="1" th:if="${!turnos.isEmpty()}">
-    <tr><th>Materia</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Modalidad</th><th>Link o lugar</th><th>Estudiante</th><th>Objetivo</th><th></th></tr>
-    <tr th:each="t : ${turnos}">
-        <td th:text="${t.materia}"></td>
-        <td th:text="${#temporals.format(t.inicio, 'dd/MM/yyyy HH:mm')}"></td>
-        <td th:text="${#temporals.format(t.fin, 'HH:mm')}"></td>
-        <td th:text="${t.estado}"></td>
-        <td th:text="${t.modalidad}"></td>
-        <td><span th:text="${t.link}"></span><span th:text="${t.lugar}"></span></td>
-        <td th:text="${t.estudiante}"></td>
-        <td th:text="${t.objetivo}"></td>
-        <td>
-            <div th:if="${t.reservaId == null}">
-        <form action="/tutor/turnos/baja" method="post">
-            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
-            <input type="hidden" name="turnoId" th:value="${t.id}">
-            <button type="submit">Dar de baja</button>
-        </form>
-            </div>
-            <div th:if="${t.reservaId != null}">
-        <form action="/tutor/reservas/cancelar" method="post">
-            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
-            <input type="hidden" name="reservaId" th:value="${t.reservaId}">
-            <button type="submit">Cancelar reserva</button>
-        </form>
-            </div>
-        </td>
-    </tr>
-</table>
-
-<p><a href="/tutor">Volver al menú</a></p>
+    <div class="table-responsive mb-4" th:if="${!turnos.isEmpty()}">
+        <table class="table table-hover align-middle bg-white border">
+            <thead class="table-light">
+                <tr><th>Materia</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Modalidad</th><th>Link o lugar</th><th>Estudiante</th><th>Objetivo</th><th></th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="t : ${turnos}">
+                    <td th:text="${t.materia}"></td>
+                    <td th:text="${#temporals.format(t.inicio, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${#temporals.format(t.fin, 'HH:mm')}"></td>
+                    <td><span class="badge" th:classappend="${t.reservaId != null} ? 'text-bg-success' : 'text-bg-light border'" th:text="${t.estado}"></span></td>
+                    <td><span class="badge text-bg-secondary" th:text="${t.modalidad}"></span></td>
+                    <td><span th:text="${t.link}"></span><span th:text="${t.lugar}"></span></td>
+                    <td th:text="${t.estudiante}"></td>
+                    <td th:text="${t.objetivo}"></td>
+                    <td>
+                        <form th:if="${t.reservaId == null}" action="/tutor/turnos/baja" method="post">
+                            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                            <input type="hidden" name="turnoId" th:value="${t.id}">
+                            <button class="btn btn-sm btn-outline-danger text-nowrap" type="submit">Dar de baja</button>
+                        </form>
+                        <form th:if="${t.reservaId != null}" action="/tutor/reservas/cancelar" method="post">
+                            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                            <input type="hidden" name="reservaId" th:value="${t.reservaId}">
+                            <button class="btn btn-sm btn-outline-danger text-nowrap" type="submit">Cancelar reserva</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
 </body>
 </html>

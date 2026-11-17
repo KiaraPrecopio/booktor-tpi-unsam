@@ -2,17 +2,24 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
     <title>No se pudo completar la operación - Booktor</title>
 </head>
-<body>
-<h1>No se pudo completar la operación</h1>
-<p th:text="${mensaje}"></p>
-<p th:if="${status == 403}">No tenés permiso para entrar a esta página.</p>
-<p th:if="${status == 404}">La página no existe.</p>
-<ul>
-    <li th:each="error : ${errores}" th:text="${error}"></li>
-</ul>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <h1 class="h3 mb-4">No se pudo completar la operación</h1>
+    <div class="alert alert-danger" role="alert">
+        <p class="mb-0" th:text="${mensaje}"></p>
+        <p class="mb-0" th:if="${status == 403}">No tenés permiso para entrar a esta página.</p>
+        <p class="mb-0" th:if="${status == 404}">La página no existe.</p>
+        <ul class="mb-0 mt-2" th:if="${errores != null and !errores.isEmpty()}">
+            <li th:each="error : ${errores}" th:text="${error}"></li>
+        </ul>
+    </div>
 
-<p><a href="/">Volver al menú</a></p>
+    <a class="btn btn-outline-primary" href="/">Volver al menú</a>
+</main>
 </body>
 </html>
