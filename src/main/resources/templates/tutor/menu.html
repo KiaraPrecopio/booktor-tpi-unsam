@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Menú del tutor - Booktor</title>
+</head>
+<body>
+<h1>Menú del tutor</h1>
+<ul>
+    <li><a href="/tutor/turnos/nuevo">Generar turnos</a></li>
+    <li><a href="/tutor/turnos">Mis turnos</a></li>
+</ul>
+
+<form action="/logout" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+    <button type="submit">Cerrar sesión</button>
+</form>
+
+</body>
+</html>

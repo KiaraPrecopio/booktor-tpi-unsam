@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Modificar tutor - Booktor</title>
+</head>
+<body>
+<h1>Modificar tutor</h1>
+<form action="/admin/tutores/modificar" method="post">
+    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+    <input type="hidden" name="id" th:value="${tutor.id}">
+    <p>
+        <label for="nombre">Nombre</label>
+        <input type="text" id="nombre" name="nombre" maxlength="100" required th:value="${tutor.nombre}">
+    </p>
+    <p>
+        <label for="apellido">Apellido</label>
+        <input type="text" id="apellido" name="apellido" maxlength="100" required th:value="${tutor.apellido}">
+    </p>
+    <p>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" maxlength="150" required th:value="${tutor.email}">
+    </p>
+    <p>
+        <label for="password">Contraseña (dejar vacía para no cambiarla)</label>
+        <input type="password" id="password" name="password" minlength="8" maxlength="72">
+    </p>
+    <p>
+        <label for="duracionTurnoMinutos">Duración del turno (minutos)</label>
+        <input type="number" id="duracionTurnoMinutos" name="duracionTurnoMinutos" min="1" required th:value="${tutor.duracionTurnoMinutos}">
+    </p>
+    <p>Adaptaciones que ofrece (al menos una):</p>
+    <div th:each="a : ${adaptaciones}">
+        <input type="checkbox" name="adaptacionIds" th:value="${a.id}" th:checked="${seleccionadas.contains(a.id)}">
+        <span th:text="${a.nombre}"></span>
+    </div>
+    <button type="submit">Guardar</button>
+</form>
+
+<p><a href="/admin/tutores">Volver a tutores</a></p>
+
+<p><a href="/admin">Volver al menú</a></p>
+</body>
+</html>

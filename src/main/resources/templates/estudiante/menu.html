@@ -2,15 +2,19 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Inicio - Booktor</title>
+    <title>Menú del estudiante - Booktor</title>
 </head>
 <body>
-<h1>Booktor</h1>
-<p>Iniciaste sesión.</p>
+<h1>Menú del estudiante</h1>
+<ul>
+    <li><a href="/estudiante/buscar">Buscar tutoría</a></li>
+    <li><a href="/estudiante/reservas">Mis reservas</a></li>
+</ul>
 
 <form action="/logout" method="post">
     <input type="hidden" name="_csrf" th:value="${_csrf.token}">
     <button type="submit">Cerrar sesión</button>
 </form>
+
 </body>
 </html>

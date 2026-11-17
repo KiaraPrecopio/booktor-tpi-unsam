@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>No se pudo completar la operación - Booktor</title>
+</head>
+<body>
+<h1>No se pudo completar la operación</h1>
+<p th:text="${mensaje}"></p>
+<p th:if="${status == 403}">No tenés permiso para entrar a esta página.</p>
+<p th:if="${status == 404}">La página no existe.</p>
+<ul>
+    <li th:each="error : ${errores}" th:text="${error}"></li>
+</ul>
+
+<p><a href="/">Volver al menú</a></p>
+</body>
+</html>

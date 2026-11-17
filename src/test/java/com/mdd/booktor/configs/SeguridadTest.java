@@ -15,6 +15,10 @@ import com.mdd.booktor.controllers.MateriaController;
 import com.mdd.booktor.controllers.ReservaController;
 import com.mdd.booktor.controllers.TurnoController;
 import com.mdd.booktor.controllers.TutorController;
+import com.mdd.booktor.controllers.web.PanelAdminController;
+import com.mdd.booktor.controllers.web.PanelEstudianteController;
+import com.mdd.booktor.controllers.web.PanelTutorController;
+import com.mdd.booktor.services.AdaptacionService;
 import com.mdd.booktor.services.BusquedaService;
 import com.mdd.booktor.services.MateriaService;
 import com.mdd.booktor.services.ReservaService;
@@ -30,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ MateriaController.class, TutorController.class, TurnoController.class,
-        BusquedaController.class, ReservaController.class, InicioController.class })
+        BusquedaController.class, ReservaController.class, InicioController.class,
+        PanelAdminController.class, PanelTutorController.class, PanelEstudianteController.class })
 @Import(SecurityConfig.class)
 class SeguridadTest {
 
@@ -47,6 +52,8 @@ class SeguridadTest {
     private BusquedaService busquedaService;
     @MockitoBean
     private ReservaService reservaService;
+    @MockitoBean
+    private AdaptacionService adaptacionService;
 
     @Test
     void sinSesionLaApiDevuelve401() throws Exception {
@@ -69,11 +76,47 @@ class SeguridadTest {
     }
 
     @Test
-    @WithMockUser(username = "ana@mail.com", roles = "TUTOR")
-    void conSesionSeVeElMenuConElTokenParaCerrarSesion() throws Exception {
-        mockMvc.perform(get("/"))
+    @WithMockUser(roles = "ADMINISTRADOR")
+    void alIniciarSesionElAdministradorVaASuMenu() throws Exception {
+        mockMvc.perform(get("/")).andExpect(redirectedUrl("/admin"));
+    }
+
+    @Test
+    @WithMockUser(roles = "TUTOR")
+    void alIniciarSesionElTutorVaASuMenu() throws Exception {
+        mockMvc.perform(get("/")).andExpect(redirectedUrl("/tutor"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ESTUDIANTE")
+    void alIniciarSesionElEstudianteVaASuMenu() throws Exception {
+        mockMvc.perform(get("/")).andExpect(redirectedUrl("/estudiante"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ESTUDIANTE")
+    void elEstudianteVeSuMenuConElTokenParaCerrarSesion() throws Exception {
+        mockMvc.perform(get("/estudiante"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("name=\"_csrf\"")));
+    }
+
+    @Test
+    @WithMockUser(roles = "ESTUDIANTE")
+    void elEstudianteNoEntraALasPantallasDelAdministrador() throws Exception {
+        mockMvc.perform(get("/admin")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "TUTOR")
+    void elTutorNoEntraALasPantallasDelEstudiante() throws Exception {
+        mockMvc.perform(get("/estudiante")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRADOR")
+    void elAdministradorNoEntraALasPantallasDelTutor() throws Exception {
+        mockMvc.perform(get("/tutor")).andExpect(status().isForbidden());
     }
 
     @Test

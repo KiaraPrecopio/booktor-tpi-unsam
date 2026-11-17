@@ -32,6 +32,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/reservas/mis-reservas").hasRole(ESTUDIANTE)
                 .requestMatchers("/api/reservas/activas").hasRole(ADMIN)
                 .requestMatchers(HttpMethod.PATCH, "/api/reservas/*/cancelacion").hasAnyRole(ADMIN, TUTOR, ESTUDIANTE)
+                .requestMatchers("/admin/**").hasRole(ADMIN)
+                .requestMatchers("/tutor/**").hasRole(TUTOR)
+                .requestMatchers("/estudiante/**").hasRole(ESTUDIANTE)
                 .anyRequest().authenticated())
 
             .formLogin(form -> form
