@@ -2,39 +2,53 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
     <title>Modificar estudiante - Booktor</title>
 </head>
-<body>
-<h1>Modificar estudiante</h1>
-<form action="/admin/estudiantes/modificar" method="post">
-    <input type="hidden" name="_csrf" th:value="${_csrf.token}">
-    <input type="hidden" name="id" th:value="${estudiante.id}">
-    <p>
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" name="nombre" maxlength="100" required th:value="${estudiante.nombre}">
-    </p>
-    <p>
-        <label for="apellido">Apellido</label>
-        <input type="text" id="apellido" name="apellido" maxlength="100" required th:value="${estudiante.apellido}">
-    </p>
-    <p>
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" maxlength="150" required th:value="${estudiante.email}">
-    </p>
-    <p>
-        <label for="password">Contraseña (dejar vacía para no cambiarla)</label>
-        <input type="password" id="password" name="password" minlength="8" maxlength="72">
-    </p>
-    <p>Adaptaciones que necesita:</p>
-    <div th:each="a : ${adaptaciones}">
-        <input type="checkbox" name="adaptacionIds" th:value="${a.id}" th:checked="${seleccionadas.contains(a.id)}">
-        <span th:text="${a.nombre}"></span>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="/admin/estudiantes">Estudiantes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modificar estudiante</li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-4">Modificar estudiante</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/estudiantes/modificar" method="post">
+                <input type="hidden" name="_csrf" th:value="${_csrf.token}">
+                <input type="hidden" name="id" th:value="${estudiante.id}">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="nombre">Nombre</label>
+                        <input class="form-control" type="text" id="nombre" name="nombre" maxlength="100" required th:value="${estudiante.nombre}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="apellido">Apellido</label>
+                        <input class="form-control" type="text" id="apellido" name="apellido" maxlength="100" required th:value="${estudiante.apellido}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="email">Email</label>
+                        <input class="form-control" type="email" id="email" name="email" maxlength="150" required th:value="${estudiante.email}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="password">Contraseña (dejar vacía para no cambiarla)</label>
+                        <input class="form-control" type="password" id="password" name="password" minlength="8" maxlength="72">
+                    </div>
+                </div>
+                <p class="form-label mb-2">Adaptaciones que necesita:</p>
+                <div class="form-check" th:each="a : ${adaptaciones}">
+                    <input class="form-check-input" type="checkbox" th:id="${'adaptacion' + a.id}" name="adaptacionIds" th:value="${a.id}" th:checked="${seleccionadas.contains(a.id)}">
+                    <label class="form-check-label" th:for="${'adaptacion' + a.id}" th:text="${a.nombre}"></label>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit">Guardar</button>
+            </form>
+        </div>
     </div>
-    <button type="submit">Guardar</button>
-</form>
-
-<p><a href="/admin/estudiantes">Volver a estudiantes</a></p>
-
-<p><a href="/admin">Volver al menú</a></p>
+</main>
 </body>
 </html>

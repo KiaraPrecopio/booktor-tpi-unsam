@@ -2,30 +2,49 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
     <title>Buscar tutoría - Booktor</title>
 </head>
-<body>
-<h1>Buscar tutoría</h1>
-<form action="/estudiante/buscar" method="get">
-    <label for="nombre">Materia</label>
-    <input type="text" id="nombre" name="nombre" th:value="${nombre}">
-    <button type="submit">Buscar</button>
-</form>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/estudiante">Inicio</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Buscar tutoría</li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-4">Buscar tutoría</h1>
+    <form class="row g-2 align-items-end mb-4" action="/estudiante/buscar" method="get">
+        <div class="col-sm-8 col-md-6">
+            <label class="form-label" for="nombre">Materia</label>
+            <input class="form-control" type="text" id="nombre" name="nombre" th:value="${nombre}">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" type="submit">Buscar</button>
+        </div>
+    </form>
 
-<p th:if="${materias.isEmpty()}">No hay materias con turnos disponibles.</p>
+    <div class="alert alert-info" th:if="${materias.isEmpty()}">No hay materias con turnos disponibles.</div>
 
-<table border="1" th:if="${!materias.isEmpty()}">
-    <tr><th>Materia</th><th>Descripción</th><th></th></tr>
-    <tr th:each="m : ${materias}">
-        <td th:text="${m.nombre}"></td>
-        <td th:text="${m.descripcion}"></td>
-        <td><form action="/estudiante/tutores" method="get">
-            <input type="hidden" name="materiaId" th:value="${m.id}">
-            <button type="submit">Ver tutores</button>
-        </form></td>
-    </tr>
-</table>
-
-<p><a href="/estudiante">Volver al menú</a></p>
+    <div class="table-responsive mb-4" th:if="${!materias.isEmpty()}">
+        <table class="table table-hover align-middle bg-white border">
+            <thead class="table-light">
+                <tr><th>Materia</th><th>Descripción</th><th></th></tr>
+            </thead>
+            <tbody>
+                <tr th:each="m : ${materias}">
+                    <td th:text="${m.nombre}"></td>
+                    <td th:text="${m.descripcion}"></td>
+                    <td><form action="/estudiante/tutores" method="get">
+                        <input type="hidden" name="materiaId" th:value="${m.id}">
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Ver tutores</button>
+                    </form></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
 </body>
 </html>
