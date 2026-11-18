@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
+    <title>Tutores disponibles - Booktor</title>
+</head>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/estudiante">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="/estudiante/buscar">Buscar tutoría</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${materia.nombre}"></li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-1">Tutores disponibles</h1>
+    <h2 class="h5 text-secondary mb-4" th:text="${materia.nombre}"></h2>
+
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <form class="card card-body" action="/estudiante/tutores" method="get">
+                <input type="hidden" name="materiaId" th:value="${materia.id}">
+                <p class="form-label mb-2">Adaptaciones que necesito:</p>
+                <div class="form-check" th:each="a : ${adaptaciones}">
+                    <input class="form-check-input" type="checkbox" th:id="${'adaptacion' + a.id}" name="adaptaciones" th:value="${a.id}" th:checked="${seleccionadas.contains(a.id)}">
+                    <label class="form-check-label" th:for="${'adaptacion' + a.id}" th:text="${a.nombre}"></label>
+                </div>
+                <div class="mt-3 mb-3">
+                    <label class="form-label" for="modalidad">Modalidad</label>
+                    <select class="form-select" id="modalidad" name="modalidad">
+                        <option value="">Cualquiera</option>
+                        <option value="VIRTUAL" th:selected="${modalidad == 'VIRTUAL'}">Virtual</option>
+                        <option value="PRESENCIAL" th:selected="${modalidad == 'PRESENCIAL'}">Presencial</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" type="submit">Filtrar</button>
+            </form>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="alert alert-info" th:if="${tutores.isEmpty()}">No hay tutores con turnos disponibles para esos filtros.</div>
+
+            <div class="card mb-4" th:each="t : ${tutores}">
+                <div class="card-body">
+                    <h3 class="h5 card-title" th:text="${t.nombre + ' ' + t.apellido}"></h3>
+                    <p class="mb-1 text-secondary">Adaptaciones que ofrece:</p>
+                    <ul class="list-inline mb-3">
+                        <li class="list-inline-item badge text-bg-info" th:each="a : ${t.adaptaciones}" th:text="${a.nombre}"></li>
+                    </ul>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr><th>Inicio</th><th>Fin</th><th>Modalidad</th><th>Reservar</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="turno : ${t.turnos}">
+                                    <td th:text="${#temporals.format(turno.inicio, 'dd/MM/yyyy HH:mm')}"></td>
+                                    <td th:text="${#temporals.format(turno.fin, 'HH:mm')}"></td>
+                                    <td><span class="badge text-bg-secondary" th:text="${turno.modalidad}"></span></td>
+                                    <td>
+                                        <form class="d-flex gap-2" action="/estudiante/reservas" method="post">
+                                            <input type="hidden" name="turnoId" th:value="${turno.id}">
+                                            <input class="form-control form-control-sm" type="text" name="objetivo" maxlength="500" placeholder="Objetivo (opcional)" aria-label="Objetivo de la tutoría (opcional)">
+                                            <button class="btn btn-sm btn-primary text-nowrap" type="submit">Reservar turno</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.3/css/bootstrap.min.css">
+    <title>Modificar adaptación - Booktor</title>
+</head>
+<body class="bg-light">
+<nav th:replace="~{fragmentos :: barra}"></nav>
+<main class="container">
+    <nav aria-label="Ubicación">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="/admin/adaptaciones">Adaptaciones</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modificar adaptación</li>
+        </ol>
+    </nav>
+    <h1 class="h3 mb-4">Modificar adaptación</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form action="/admin/adaptaciones/modificar" method="post">
+                <input type="hidden" name="id" th:value="${adaptacion.id}">
+                <div class="mb-3">
+                    <label class="form-label" for="nombre">Nombre</label>
+                    <input class="form-control" type="text" id="nombre" name="nombre" maxlength="100" required th:value="${adaptacion.nombre}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="descripcion">Descripción</label>
+                    <input class="form-control" type="text" id="descripcion" name="descripcion" maxlength="255" th:value="${adaptacion.descripcion}">
+                </div>
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>

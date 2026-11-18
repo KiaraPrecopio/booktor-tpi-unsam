@@ -16,21 +16,22 @@
 ### Turnos del tutor
 - El tutor **genera turnos en bloque** para una materia: por ejemplo, Matemática el martes 28/10 de 14:00 a 18:00.
 - El sistema divide el bloque según la duración del tutor (con turnos de 60 minutos, el bloque anterior genera 4 turnos). Solo se guardan los turnos.
+- Cada bloque tiene una **modalidad**: virtual (con el link de la reunión) o presencial (con el lugar). Todos los turnos del bloque la heredan.
 - El tutor puede dar de baja los turnos que están disponibles, con las restricciones de [03-definiciones.md](03-definiciones.md).
 
 ### Búsqueda y reservas
-- **Búsqueda:** el estudiante busca materias por nombre (solo aparecen las que tienen turnos disponibles) y elige una. Ve una card por tutor, con sus adaptaciones y sus turnos disponibles, y puede filtrar los tutores por adaptación.
-- **Reserva:** el estudiante reserva un turno disponible.
+- **Búsqueda:** el estudiante busca materias por nombre (solo aparecen las que tienen turnos disponibles) y elige una. Ve una card por tutor, con sus adaptaciones y sus turnos disponibles (con su modalidad), y puede filtrar por adaptación y por modalidad.
+- **Reserva:** el estudiante reserva un turno disponible y puede escribir, de forma opcional, su objetivo para la tutoría.
 - **Cancelación:** el estudiante, el tutor o el administrador pueden cancelar una reserva. La reserva cancelada queda guardada y el turno vuelve a estar disponible.
-- **Mis turnos:** el estudiante ve sus próximas reservas; el tutor ve sus próximos turnos, reservados o no.
+- **Mis turnos:** el estudiante ve sus próximas reservas, con el link o el lugar del encuentro; el tutor ve sus próximos turnos, reservados o no, con el objetivo de cada estudiante.
 
 ### Acceso
 - **Login** para estudiantes, tutores y administradores.
 - Cada actor accede solo a las operaciones de su rol.
 
 ### Interfaz
-- Interfaz web con Thymeleaf, con un menú de opciones según el actor.
-- API REST documentada con Swagger/OpenAPI.
+- Interfaz web con Thymeleaf, con un menú de opciones según el actor, usable con teclado y lectores de pantalla.
+- API REST documentada con Swagger/OpenAPI y verificada con una colección de Postman.
 
 ## Candidatos a añadir como extras
 
@@ -42,5 +43,5 @@ Se encaran solo con el MVP terminado y probado:
 - **Perfil del tutor:** mostrar las materias que da, obtenidas de sus turnos, sin agregar tablas.
 - **Disponibilidad recurrente:** opción "repetir semanalmente hasta [fecha]" al generar un bloque. Reutiliza la misma generación y las mismas validaciones, sin cambios en el modelo de datos.
 - **Adaptaciones por bloque:** que el tutor elija, al generar un bloque, cuáles de las adaptaciones de su perfil ofrece en esos turnos, con las del perfil marcadas por defecto.
-- **Modalidad:** que cada turno sea virtual (con el link de la reunión) o presencial (con el lugar), y que el estudiante pueda filtrar por ella.
+- **Valoraciones:** que el estudiante califique la tutoría recibida (por ejemplo, de 1 a 5) cuando el turno pasa a FINALIZADO, y que el promedio se muestre en la card del tutor.
 - **Archivar materias y adaptaciones:** que dejen de ofrecerse para lo nuevo sin afectar los turnos y los tutores que ya las usan.

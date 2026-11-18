@@ -41,6 +41,9 @@ erDiagram
         datetime inicio
         datetime fin
         varchar estado "DISPONIBLE | ASIGNADO | FINALIZADO | DADO_DE_BAJA"
+        varchar modalidad "VIRTUAL | PRESENCIAL"
+        varchar link "solo VIRTUAL"
+        varchar lugar "solo PRESENCIAL"
     }
 
     RESERVA {
@@ -49,6 +52,7 @@ erDiagram
         bigint estudiante_id FK "USUARIO con rol ESTUDIANTE"
         varchar estado "ACTIVA | CANCELADA | FINALIZADA"
         datetime fecha_reserva
+        varchar objetivo "opcional, hasta 500 caracteres"
         varchar cancelada_por "ESTUDIANTE | TUTOR | ADMINISTRADOR"
         datetime fecha_cancelacion
     }
@@ -96,4 +100,6 @@ Login:
 | El nombre de materias y adaptaciones no tiene restricción única en la base. | Solo no se repite entre las activas (RN-05), y eso lo valida el servicio. |
 | `RESERVA` tiene un índice único filtrado sobre `turno_id`, solo para las reservas ACTIVAS (`WHERE estado = 'ACTIVA'`). | Refuerza en la base la regla de una reserva ACTIVA por turno (RN-17). Si dos estudiantes reservan el mismo turno a la vez, la base rechaza la segunda y el servicio responde 409. Las reservas canceladas o finalizadas no cuentan, así que el turno puede acumular reservas a lo largo del tiempo. Se crea con un changeset de SQL directo, porque `createIndex` de Liquibase no admite el filtro. |
 | El administrador inicial se carga con un changeset de Liquibase con parámetros. | No hay ABML de administradores. El email y el hash de la contraseña se leen de variables de entorno, así no quedan en el repositorio. |
-| Los estados, el rol y `cancelada_por` se guardan como texto. | En JPA se mapean con `@Enumerated(EnumType.STRING)`, que es legible en la base y no se rompe si se reordena el enum. |
+| La modalidad, el link y el lugar se guardan en cada turno, no en el bloque. | El bloque no se guarda (RN-06). Cada turno hereda los datos de su bloque, y así un tutor puede tener turnos de las dos modalidades. Que haya link si es VIRTUAL y lugar si es PRESENCIAL lo valida el servicio (RN-27). |
+| El objetivo se guarda en la reserva, no en el usuario. | Cambia de una tutoría a otra. Al estar en la reserva, también queda en el historial. |
+| Los estados, el rol, la modalidad y `cancelada_por` se guardan como texto. | En JPA se mapean con `@Enumerated(EnumType.STRING)`, que es legible en la base y no se rompe si se reordena el enum. |

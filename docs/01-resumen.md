@@ -10,13 +10,18 @@
 
 ## La solución
 
-- Los tutores publican su disponibilidad horaria por materia y declaran qué adaptaciones ofrecen.
-- Los estudiantes buscan una materia, filtran a sus tutores por adaptación y reservan un turno disponible.
+- Los tutores publican su disponibilidad horaria por materia, en modalidad virtual o presencial, y declaran qué adaptaciones ofrecen.
+- Los estudiantes buscan una materia, filtran a sus tutores por adaptación y por modalidad, y reservan un turno disponible, contando si quieren qué objetivo tienen para la tutoría.
 - El sistema valida que no haya reservas dobles, reservas en el pasado ni turnos superpuestos para un mismo estudiante, y explica el motivo cada vez que rechaza una operación.
 
 ## Relación con el DUA
 
-Booktor se apoya principalmente en el principio de múltiples formas de representación del DUA: cada estudiante puede encontrar un tutor que le presente los contenidos en el formato que necesita (por ejemplo, material visual, lectura fácil o apoyo auditivo).
+| Principio del DUA | Cómo lo aborda Booktor |
+|---|---|
+| **Representación** (principal) | Cada estudiante puede encontrar un tutor que le presente los contenidos en el formato que necesita (por ejemplo, material visual, lectura fácil o apoyo auditivo), gracias a las adaptaciones que declara cada tutor. |
+| **Acción y expresión** | Los turnos pueden ser virtuales o presenciales, y el estudiante elige la modalidad que le resulta más accesible. |
+| **Implicación** | Al reservar, el estudiante puede indicar su objetivo para la tutoría (qué quiere trabajar), y el tutor lo ve antes del encuentro. |
+| **Accesibilidad** | La interfaz se puede usar con teclado y con lectores de pantalla, con buen contraste y textos claros (RNF-08). |
 
 ## Usuarios
 
