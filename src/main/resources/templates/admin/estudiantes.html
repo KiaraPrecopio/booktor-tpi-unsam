@@ -31,7 +31,6 @@
                         <button class="btn btn-sm btn-outline-primary" type="submit">Editar</button>
                     </form></td>
                     <td><form action="/admin/estudiantes/baja" method="post">
-                        <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                         <input type="hidden" name="id" th:value="${x.id}">
                         <button class="btn btn-sm btn-outline-danger" type="submit">Dar de baja</button>
                     </form></td>
@@ -44,7 +43,6 @@
         <div class="card-body">
             <h2 class="h5 card-title">Nuevo estudiante</h2>
             <form action="/admin/estudiantes" method="post">
-                <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
                         <label class="form-label" for="nombre">Nombre</label>

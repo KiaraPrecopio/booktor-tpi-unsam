@@ -19,7 +19,6 @@
     </div>
 
     <form action="/logout" method="post">
-        <input type="hidden" name="_csrf" th:value="${_csrf.token}">
         <button class="btn btn-outline-danger" type="submit">Cerrar sesión</button>
     </form>
 </main>

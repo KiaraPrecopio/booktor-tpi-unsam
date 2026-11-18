@@ -14,6 +14,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.mdd.booktor.configs.JwtConfig;
 import com.mdd.booktor.configs.SecurityConfig;
 import com.mdd.booktor.dtos.BloqueTurnosRequest;
 import com.mdd.booktor.dtos.MateriaResponse;
@@ -33,7 +34,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(PanelTutorController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtConfig.class })
 @WithMockUser(username = "ana@mail.com", roles = "TUTOR")
 class PanelTutorControllerTest {
 
@@ -90,7 +90,7 @@ class PanelTutorControllerTest {
 
     @Test
     void generarBloqueArmaElPedidoConLosCamposDelFormulario() throws Exception {
-        mockMvc.perform(post("/tutor/turnos").with(csrf())
+        mockMvc.perform(post("/tutor/turnos")
                         .param("materiaId", "2").param("fecha", "2026-11-20")
                         .param("horaDesde", "14:00").param("horaHasta", "16:00")
                         .param("modalidad", "VIRTUAL").param("link", "https://meet/abc").param("lugar", ""))
@@ -106,7 +106,7 @@ class PanelTutorControllerTest {
 
     @Test
     void unBloqueSinMateriaMuestraElError() throws Exception {
-        mockMvc.perform(post("/tutor/turnos").with(csrf()).param("fecha", "2026-11-20")
+        mockMvc.perform(post("/tutor/turnos").param("fecha", "2026-11-20")
                         .param("horaDesde", "14:00").param("horaHasta", "16:00").param("modalidad", "VIRTUAL"))
                 .andExpect(view().name("error"))
                 .andExpect(content().string(containsString("La materia es obligatoria")));
@@ -118,14 +118,14 @@ class PanelTutorControllerTest {
     void siElBloqueSeSuperponeSeMuestraElMotivo() throws Exception {
         when(turnoService.generarBloque(any(), any())).thenThrow(new ConflictoException("Se superpone con otro turno."));
 
-        mockMvc.perform(post("/tutor/turnos").with(csrf()).param("materiaId", "2").param("fecha", "2026-11-20")
+        mockMvc.perform(post("/tutor/turnos").param("materiaId", "2").param("fecha", "2026-11-20")
                         .param("horaDesde", "14:00").param("horaHasta", "16:00").param("modalidad", "VIRTUAL"))
                 .andExpect(content().string(containsString("Se superpone con otro turno.")));
     }
 
     @Test
     void darDeBajaVuelveAMisTurnos() throws Exception {
-        mockMvc.perform(post("/tutor/turnos/baja").with(csrf()).param("turnoId", "10"))
+        mockMvc.perform(post("/tutor/turnos/baja").param("turnoId", "10"))
                 .andExpect(redirectedUrl("/tutor/turnos"));
 
         verify(turnoService).darDeBaja(10L, "ana@mail.com");
@@ -133,7 +133,7 @@ class PanelTutorControllerTest {
 
     @Test
     void cancelarUnaReservaVuelveAMisTurnos() throws Exception {
-        mockMvc.perform(post("/tutor/reservas/cancelar").with(csrf()).param("reservaId", "7"))
+        mockMvc.perform(post("/tutor/reservas/cancelar").param("reservaId", "7"))
                 .andExpect(redirectedUrl("/tutor/turnos"));
 
         verify(reservaService).cancelar(7L, "ana@mail.com");

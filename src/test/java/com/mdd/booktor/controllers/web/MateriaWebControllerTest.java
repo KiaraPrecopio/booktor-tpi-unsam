@@ -10,6 +10,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.mdd.booktor.configs.JwtConfig;
 import com.mdd.booktor.configs.SecurityConfig;
 import com.mdd.booktor.dtos.MateriaRequest;
 import com.mdd.booktor.dtos.MateriaResponse;
@@ -21,7 +22,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(MateriaWebController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtConfig.class })
 @WithMockUser(roles = "ADMINISTRADOR")
 class MateriaWebControllerTest {
 
@@ -52,7 +52,7 @@ class MateriaWebControllerTest {
 
     @Test
     void crearVuelveALaListaYLaDescripcionVaciaLlegaComoNull() throws Exception {
-        mockMvc.perform(post("/admin/materias").with(csrf()).param("nombre", "Física").param("descripcion", ""))
+        mockMvc.perform(post("/admin/materias").param("nombre", "Física").param("descripcion", ""))
                 .andExpect(redirectedUrl("/admin/materias"));
 
         verify(materiaService).crear(new MateriaRequest("Física", null));
@@ -60,7 +60,7 @@ class MateriaWebControllerTest {
 
     @Test
     void crearSinNombreMuestraElError() throws Exception {
-        mockMvc.perform(post("/admin/materias").with(csrf()).param("nombre", " "))
+        mockMvc.perform(post("/admin/materias").param("nombre", " "))
                 .andExpect(view().name("error"))
                 .andExpect(content().string(containsString("El nombre es obligatorio")));
 
@@ -77,7 +77,7 @@ class MateriaWebControllerTest {
 
     @Test
     void modificarVuelveALaLista() throws Exception {
-        mockMvc.perform(post("/admin/materias/modificar").with(csrf()).param("id", "2")
+        mockMvc.perform(post("/admin/materias/modificar").param("id", "2")
                         .param("nombre", "Análisis II").param("descripcion", "Integrales"))
                 .andExpect(redirectedUrl("/admin/materias"));
 
@@ -88,14 +88,14 @@ class MateriaWebControllerTest {
     void siNoSePuedeDarDeBajaSeMuestraElMotivo() throws Exception {
         doThrow(new ConflictoException("La materia tiene turnos futuros.")).when(materiaService).darDeBaja(2L);
 
-        mockMvc.perform(post("/admin/materias/baja").with(csrf()).param("id", "2"))
+        mockMvc.perform(post("/admin/materias/baja").param("id", "2"))
                 .andExpect(view().name("error"))
                 .andExpect(content().string(containsString("La materia tiene turnos futuros.")));
     }
 
     @Test
     void darDeBajaVuelveALaLista() throws Exception {
-        mockMvc.perform(post("/admin/materias/baja").with(csrf()).param("id", "2"))
+        mockMvc.perform(post("/admin/materias/baja").param("id", "2"))
                 .andExpect(redirectedUrl("/admin/materias"));
 
         verify(materiaService).darDeBaja(2L);

@@ -11,6 +11,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.mdd.booktor.configs.JwtConfig;
 import com.mdd.booktor.configs.SecurityConfig;
 import com.mdd.booktor.dtos.AdaptacionResponse;
 import com.mdd.booktor.dtos.TutorRequest;
@@ -22,7 +23,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(TutorWebController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtConfig.class })
 @WithMockUser(roles = "ADMINISTRADOR")
 class TutorWebControllerTest {
 
@@ -59,7 +59,7 @@ class TutorWebControllerTest {
 
     @Test
     void crearArmaElPedidoConDuracionYAdaptaciones() throws Exception {
-        mockMvc.perform(post("/admin/tutores").with(csrf()).param("nombre", "Ana").param("apellido", "Gómez")
+        mockMvc.perform(post("/admin/tutores").param("nombre", "Ana").param("apellido", "Gómez")
                         .param("email", "ana@mail.com").param("password", "Prueba1234")
                         .param("duracionTurnoMinutos", "45").param("adaptacionIds", "3"))
                 .andExpect(redirectedUrl("/admin/tutores"));
@@ -69,7 +69,7 @@ class TutorWebControllerTest {
 
     @Test
     void unTutorSinAdaptacionesMuestraElError() throws Exception {
-        mockMvc.perform(post("/admin/tutores").with(csrf()).param("nombre", "Ana").param("apellido", "Gómez")
+        mockMvc.perform(post("/admin/tutores").param("nombre", "Ana").param("apellido", "Gómez")
                         .param("email", "ana@mail.com").param("password", "Prueba1234").param("duracionTurnoMinutos", "45"))
                 .andExpect(view().name("error"))
                 .andExpect(content().string(containsString("El tutor tiene que ofrecer al menos una adaptación")));
@@ -89,7 +89,7 @@ class TutorWebControllerTest {
 
     @Test
     void modificarVuelveALaLista() throws Exception {
-        mockMvc.perform(post("/admin/tutores/modificar").with(csrf()).param("id", "5").param("nombre", "Ana")
+        mockMvc.perform(post("/admin/tutores/modificar").param("id", "5").param("nombre", "Ana")
                         .param("apellido", "Gómez").param("email", "ana@mail.com").param("password", "")
                         .param("duracionTurnoMinutos", "60").param("adaptacionIds", "3"))
                 .andExpect(redirectedUrl("/admin/tutores"));
@@ -99,7 +99,7 @@ class TutorWebControllerTest {
 
     @Test
     void darDeBajaVuelveALaLista() throws Exception {
-        mockMvc.perform(post("/admin/tutores/baja").with(csrf()).param("id", "5"))
+        mockMvc.perform(post("/admin/tutores/baja").param("id", "5"))
                 .andExpect(redirectedUrl("/admin/tutores"));
 
         verify(tutorService).darDeBaja(5L);

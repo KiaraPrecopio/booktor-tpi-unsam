@@ -62,7 +62,6 @@
                                     <td><span class="badge text-bg-secondary" th:text="${turno.modalidad}"></span></td>
                                     <td>
                                         <form class="d-flex gap-2" action="/estudiante/reservas" method="post">
-                                            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                                             <input type="hidden" name="turnoId" th:value="${turno.id}">
                                             <input class="form-control form-control-sm" type="text" name="objetivo" maxlength="500" placeholder="Objetivo (opcional)" aria-label="Objetivo de la tutoría (opcional)">
                                             <button class="btn btn-sm btn-primary text-nowrap" type="submit">Reservar turno</button>
