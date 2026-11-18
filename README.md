@@ -101,20 +101,20 @@ WHERE name = 'booktor';
 `is_disabled` tiene que ser `0`. Que la base por defecto sea `master` es normal: la base se indica en la URL de conexión.
 
 #### 3. Configurar las variables de entorno
-Las credenciales no se guardan en el repositorio. Copiar `.env.example` como `.env` en la raíz del proyecto y completarlo con el login del paso anterior:
+Las credenciales no se guardan en el repositorio. Copiar `.env.example` como `.env` en la raíz del proyecto y completar `DB_USERNAME` y `DB_PASSWORD` con el login del paso anterior. El resto ya trae valores de prueba:
 ```properties
 DB_URL=jdbc:sqlserver://localhost:1433;databaseName=booktor_db;encrypt=false;trustServerCertificate=true
 DB_USERNAME=booktor
 DB_PASSWORD=<contraseña>
 ADMIN_EMAIL=admin@booktor.com
 ADMIN_PASSWORD_HASH=$2a$12$Pyo.NCNZ/GrP32S6uRQONOXQoIy/p/iAqgboS9nHMnJv44R98RT7O
-JWT_SECRET=<texto aleatorio de al menos 32 caracteres>
+JWT_SECRET=G88roQ7xj0l9mCIHdqaUu6lfoVOQcdwgbj1SF9X4k2tjqyql
 ```
 `DB_URL` va en una sola línea, sin espacios. El `.env` está en el `.gitignore`.
 
 `ADMIN_EMAIL` y `ADMIN_PASSWORD_HASH` son los datos del administrador inicial, que Liquibase crea la primera vez que arranca la aplicación. La contraseña no se guarda en texto plano, sino su hash BCrypt. El hash del ejemplo corresponde a la contraseña de prueba `Admin1234`, así que el administrador entra con `admin@booktor.com` / `Admin1234`. Es una credencial de prueba: en un entorno real se reemplaza por el hash de una contraseña propia.
 
-`JWT_SECRET` es la clave con la que se firman los tokens de inicio de sesión. Cada integrante inventa la suya: sin esa variable la aplicación no arranca. Si se cambia, los tokens emitidos con la clave anterior dejan de ser válidos.
+`JWT_SECRET` es la clave con la que se firman los tokens de inicio de sesión, y tiene que tener al menos 32 caracteres: sin esa variable la aplicación no arranca. El valor del ejemplo sirve para probar el proyecto; en un entorno real se reemplaza por un texto aleatorio propio. Si se cambia, los tokens emitidos con la clave anterior dejan de ser válidos.
 
 #### 4. Ejecutar
 ```bash
@@ -125,7 +125,9 @@ Al arrancar, Liquibase aplica los changesets pendientes. Las tablas no las crea 
 
 La primera vez, en `booktor_db > Tables` tienen que aparecer `DATABASECHANGELOG` y `DATABASECHANGELOGLOCK`.
 
-Para correr las pruebas: `.\mvnw test`.
+Para correr las pruebas: `.\mvnw test`. Para el reporte de cobertura de JaCoCo: `.\mvnw verify`, que lo genera en `target/site/jacoco/index.html`.
+
+Las pruebas usan objetos simulados (Mockito) y no tocan la base, salvo `BooktorApplicationTests`, que levanta la aplicación completa: necesita SQL Server y el `.env` configurados como en los pasos 2 y 3.
 
 #### 5. Datos de demo (opcional)
 Para cargar datos de ejemplo (materias, adaptaciones, tutores, estudiantes, turnos y reservas), agregar en el `.env`:
