@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -56,7 +57,9 @@ public class SecurityConfig {
                 .bearerTokenResolver(this::leerToken)
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(rolesDelToken()))
                 .authenticationEntryPoint(this::sinAutenticar))
-            .exceptionHandling(errores -> errores.authenticationEntryPoint(this::sinAutenticar))
+            .exceptionHandling(errores -> errores
+                .authenticationEntryPoint(this::sinAutenticar)
+                .accessDeniedHandler(this::sinPermiso))
 
             .logout(logout -> logout
                 .deleteCookies(JwtService.COOKIE)
@@ -103,5 +106,11 @@ public class SecurityConfig {
         vencida.setMaxAge(0);
         response.addCookie(vencida);
         response.sendRedirect("/login");
+    }
+
+    // Con token, pero de otro rol: 403. sendError hace que las pantallas muestren error.html.
+    private void sinPermiso(HttpServletRequest request, HttpServletResponse response,
+            AccessDeniedException ex) throws IOException {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "No tenés permiso para entrar a esta página.");
     }
 }
