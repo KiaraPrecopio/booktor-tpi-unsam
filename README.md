@@ -19,7 +19,7 @@ Plataforma de agendamiento de tutorías académicas diseñada bajo los lineamien
 * **Migraciones:** Liquibase
 * **Vistas:** Thymeleaf
 * **Documentación de la API:** Swagger / OpenAPI (springdoc)
-* **Seguridad:** Spring Security
+* **Seguridad:** Spring Security con JWT (OAuth2 Resource Server)
 * **Pruebas:** JUnit 5, Mockito, MockMvc y JaCoCo
 * **Gestor de Dependencias:** Maven
 
@@ -106,8 +106,11 @@ Las credenciales no se guardan en el repositorio. Copiar `.env.example` como `.e
 DB_URL=jdbc:sqlserver://localhost:1433;databaseName=booktor_db;encrypt=false;trustServerCertificate=true
 DB_USERNAME=booktor
 DB_PASSWORD=<contraseña>
+JWT_SECRET=<texto aleatorio de al menos 32 caracteres>
 ```
 `DB_URL` va en una sola línea, sin espacios. El `.env` está en el `.gitignore`.
+
+`JWT_SECRET` es la clave con la que se firman los tokens de inicio de sesión. Cada integrante inventa la suya: sin esa variable la aplicación no arranca. Si se cambia, los tokens emitidos con la clave anterior dejan de ser válidos.
 
 #### 4. Ejecutar
 ```bash
@@ -138,6 +141,33 @@ Todos los usuarios de demo tienen la contraseña de prueba `Test1234` (no es una
 | Estudiante | `estudiante2@booktor.com` | Tomás Díaz. Tiene una reserva activa con Sofía y una cancelada con Lucía. |
 
 Para volver a cargar los datos de demo hay que vaciar la base, porque Liquibase aplica cada changeset una sola vez.
+
+#### 6. Iniciar sesión (JWT)
+La aplicación no guarda sesiones en el servidor: cada pedido trae un token JWT firmado que indica el email y el rol del usuario. El token vence a la hora.
+
+**Desde el navegador:** entrar a `http://localhost:8080/login`. Al iniciar sesión, el token se guarda en una cookie `HttpOnly` y `SameSite=Strict`, y cada usuario va al menú de su rol. "Cerrar sesión" borra la cookie.
+
+**Desde la API (Postman o Swagger):**
+1. Pedir el token:
+   ```http
+   POST http://localhost:8080/api/auth/login
+   Content-Type: application/json
+
+   { "email": "mail@booktor.com", "password": "Password1234" }
+   ```
+   Respuesta: `{ "token": "eyJ...", "tipo": "Bearer" }`.
+2. Mandar el token en el resto de los pedidos:
+   ```http
+   GET http://localhost:8080/api/turnos/mis-turnos
+   Authorization: Bearer eyJ...
+   ```
+3. En Swagger (`http://localhost:8080/swagger-ui.html`), presionar **Authorize** y pegar el token, sin la palabra `Bearer`.
+
+| Caso | Respuesta |
+|---|---|
+| Email o contraseña incorrectos | 401 |
+| Sin token, o con un token vencido o alterado | 401 en la API; el navegador vuelve al login |
+| Token válido, pero de un rol que no corresponde | 403 |
 
 ## 🤝 Convenciones del equipo
 

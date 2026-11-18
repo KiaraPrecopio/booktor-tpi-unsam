@@ -11,6 +11,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.mdd.booktor.configs.JwtConfig;
 import com.mdd.booktor.configs.SecurityConfig;
 import com.mdd.booktor.dtos.AdaptacionResponse;
 import com.mdd.booktor.dtos.EstudianteRequest;
@@ -21,14 +22,13 @@ import com.mdd.booktor.services.EstudianteService;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 
 @WebMvcTest(EstudianteWebController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtConfig.class })
 @WithMockUser(roles = "ADMINISTRADOR")
 class EstudianteWebControllerTest {
 
@@ -60,7 +60,7 @@ class EstudianteWebControllerTest {
 
     @Test
     void crearArmaElPedidoConLasAdaptacionesMarcadas() throws Exception {
-        mockMvc.perform(post("/admin/estudiantes").with(csrf()).param("nombre", "Juan").param("apellido", "Pérez")
+        mockMvc.perform(post("/admin/estudiantes").param("nombre", "Juan").param("apellido", "Pérez")
                         .param("email", "juan@mail.com").param("password", "Prueba1234")
                         .param("adaptacionIds", "3").param("adaptacionIds", "4"))
                 .andExpect(redirectedUrl("/admin/estudiantes"));
@@ -80,7 +80,7 @@ class EstudianteWebControllerTest {
 
     @Test
     void modificarSinContrasenaNoLaCambia() throws Exception {
-        mockMvc.perform(post("/admin/estudiantes/modificar").with(csrf()).param("id", "1").param("nombre", "Juan")
+        mockMvc.perform(post("/admin/estudiantes/modificar").param("id", "1").param("nombre", "Juan")
                         .param("apellido", "Pérez").param("email", "juan@mail.com").param("password", ""))
                 .andExpect(redirectedUrl("/admin/estudiantes"));
 
@@ -89,7 +89,7 @@ class EstudianteWebControllerTest {
 
     @Test
     void darDeBajaVuelveALaLista() throws Exception {
-        mockMvc.perform(post("/admin/estudiantes/baja").with(csrf()).param("id", "1"))
+        mockMvc.perform(post("/admin/estudiantes/baja").param("id", "1"))
                 .andExpect(redirectedUrl("/admin/estudiantes"));
 
         verify(estudianteService).darDeBaja(1L);

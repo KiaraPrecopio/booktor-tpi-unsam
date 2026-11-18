@@ -32,7 +32,6 @@
                     <td><span class="badge text-bg-secondary" th:text="${r.modalidad}"></span></td>
                     <td th:text="${r.objetivo}"></td>
                     <td><form action="/admin/reservas/cancelar" method="post">
-                        <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                         <input type="hidden" name="reservaId" th:value="${r.id}">
                         <button class="btn btn-sm btn-outline-danger" type="submit">Cancelar</button>
                     </form></td>

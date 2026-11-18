@@ -9,10 +9,12 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.mdd.booktor.configs.JwtConfig;
 import com.mdd.booktor.configs.SecurityConfig;
 import com.mdd.booktor.dtos.AdaptacionResponse;
 import com.mdd.booktor.dtos.MateriaResponse;
@@ -36,7 +38,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -45,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(PanelEstudianteController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtConfig.class })
 @WithMockUser(username = "juan@mail.com", roles = "ESTUDIANTE")
 class PanelEstudianteControllerTest {
 
@@ -115,7 +116,7 @@ class PanelEstudianteControllerTest {
 
     @Test
     void reservarLoHaceANombreDelEstudianteDeLaSesion() throws Exception {
-        mockMvc.perform(post("/estudiante/reservas").with(csrf()).param("turnoId", "10").param("objetivo", " Repasar "))
+        mockMvc.perform(post("/estudiante/reservas").param("turnoId", "10").param("objetivo", " Repasar "))
                 .andExpect(redirectedUrl("/estudiante/reservas"));
 
         ArgumentCaptor<ReservaRequest> request = ArgumentCaptor.forClass(ReservaRequest.class);
@@ -126,7 +127,7 @@ class PanelEstudianteControllerTest {
 
     @Test
     void elObjetivoVacioLlegaComoNull() throws Exception {
-        mockMvc.perform(post("/estudiante/reservas").with(csrf()).param("turnoId", "10").param("objetivo", ""))
+        mockMvc.perform(post("/estudiante/reservas").param("turnoId", "10").param("objetivo", ""))
                 .andExpect(redirectedUrl("/estudiante/reservas"));
 
         ArgumentCaptor<ReservaRequest> request = ArgumentCaptor.forClass(ReservaRequest.class);
@@ -136,7 +137,7 @@ class PanelEstudianteControllerTest {
 
     @Test
     void unObjetivoDemasiadoLargoMuestraElError() throws Exception {
-        mockMvc.perform(post("/estudiante/reservas").with(csrf()).param("turnoId", "10").param("objetivo", "a".repeat(501)))
+        mockMvc.perform(post("/estudiante/reservas").param("turnoId", "10").param("objetivo", "a".repeat(501)))
                 .andExpect(view().name("error"))
                 .andExpect(content().string(containsString("El objetivo no puede superar los 500 caracteres")));
 
@@ -147,7 +148,7 @@ class PanelEstudianteControllerTest {
     void siElServiceRechazaLaReservaSeMuestraElMotivo() throws Exception {
         when(reservaService.reservar(any(), any())).thenThrow(new ConflictoException("El turno ya no está disponible."));
 
-        mockMvc.perform(post("/estudiante/reservas").with(csrf()).param("turnoId", "10"))
+        mockMvc.perform(post("/estudiante/reservas").param("turnoId", "10"))
                 .andExpect(view().name("error"))
                 .andExpect(content().string(containsString("El turno ya no está disponible.")));
     }
@@ -164,16 +165,17 @@ class PanelEstudianteControllerTest {
 
     @Test
     void cancelarVuelveAMisReservas() throws Exception {
-        mockMvc.perform(post("/estudiante/reservas/cancelar").with(csrf()).param("reservaId", "7"))
+        mockMvc.perform(post("/estudiante/reservas/cancelar").param("reservaId", "7"))
                 .andExpect(redirectedUrl("/estudiante/reservas"));
 
         verify(reservaService).cancelar(7L, "juan@mail.com");
     }
 
     @Test
-    void sinTokenCsrfNoSePuedeReservar() throws Exception {
+    @WithAnonymousUser
+    void sinTokenNoSePuedeReservarYVuelveAlLogin() throws Exception {
         mockMvc.perform(post("/estudiante/reservas").param("turnoId", "10"))
-                .andExpect(status().isForbidden());
+                .andExpect(redirectedUrl("/login"));
 
         verifyNoInteractions(reservaService);
     }

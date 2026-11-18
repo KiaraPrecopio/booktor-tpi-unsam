@@ -38,12 +38,10 @@
                     <td th:text="${t.objetivo}"></td>
                     <td>
                         <form th:if="${t.reservaId == null}" action="/tutor/turnos/baja" method="post">
-                            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                             <input type="hidden" name="turnoId" th:value="${t.id}">
                             <button class="btn btn-sm btn-outline-danger text-nowrap" type="submit">Dar de baja</button>
                         </form>
                         <form th:if="${t.reservaId != null}" action="/tutor/reservas/cancelar" method="post">
-                            <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                             <input type="hidden" name="reservaId" th:value="${t.reservaId}">
                             <button class="btn btn-sm btn-outline-danger text-nowrap" type="submit">Cancelar reserva</button>
                         </form>

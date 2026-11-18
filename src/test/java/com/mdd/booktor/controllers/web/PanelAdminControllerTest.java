@@ -11,6 +11,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.mdd.booktor.configs.JwtConfig;
 import com.mdd.booktor.configs.SecurityConfig;
 import com.mdd.booktor.dtos.ReservaResponse;
 import com.mdd.booktor.models.EstadoReserva;
@@ -20,7 +21,6 @@ import com.mdd.booktor.services.ReservaService;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PanelAdminController.class)
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, JwtConfig.class })
 @WithMockUser(username = "admin@mail.com", roles = "ADMINISTRADOR")
 class PanelAdminControllerTest {
 
@@ -60,7 +60,7 @@ class PanelAdminControllerTest {
 
     @Test
     void cancelarUnaReservaVuelveALaLista() throws Exception {
-        mockMvc.perform(post("/admin/reservas/cancelar").with(csrf()).param("reservaId", "7"))
+        mockMvc.perform(post("/admin/reservas/cancelar").param("reservaId", "7"))
                 .andExpect(redirectedUrl("/admin/reservas"));
 
         verify(reservaService).cancelar(7L, "admin@mail.com");

@@ -33,7 +33,6 @@
                     <td><span th:text="${r.link}"></span><span th:text="${r.lugar}"></span></td>
                     <td th:text="${r.objetivo}"></td>
                     <td><form action="/estudiante/reservas/cancelar" method="post">
-                        <input type="hidden" name="_csrf" th:value="${_csrf.token}">
                         <input type="hidden" name="reservaId" th:value="${r.id}">
                         <button class="btn btn-sm btn-outline-danger text-nowrap" type="submit">Cancelar reserva</button>
                     </form></td>
