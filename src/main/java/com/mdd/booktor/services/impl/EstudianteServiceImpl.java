@@ -31,6 +31,8 @@ import com.mdd.booktor.utils.EstudianteMapper;
 @Service
 public class EstudianteServiceImpl implements EstudianteService {
 
+    private static final int LARGO_MINIMO_PASSWORD = 8;
+
     private final UsuarioRepository usuarioRepository;
     private final AdaptacionRepository adaptacionRepository;
     private final PasswordEncoder passwordEncoder;
@@ -49,7 +51,7 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Override
     @Transactional(readOnly = true)
     public List<EstudianteResponse> listar() {
-        return usuarioRepository.findByRolAndActivoTrue(Rol.ESTUDIANTE).stream()
+        return usuarioRepository.buscarActivosConAdaptaciones(Rol.ESTUDIANTE).stream()
                 .map(EstudianteMapper::toResponse)
                 .toList();
     }
@@ -66,6 +68,7 @@ public class EstudianteServiceImpl implements EstudianteService {
         if (request.password() == null || request.password().isBlank()) {
             throw new DatoInvalidoException("La contraseña es obligatoria para dar de alta un estudiante.");
         }
+        validarLargoPassword(request.password());
 
         String email = normalizarEmail(request.email());
         if (usuarioRepository.existsByEmailIgnoreCase(email)) {
@@ -104,6 +107,7 @@ public class EstudianteServiceImpl implements EstudianteService {
         estudiante.setApellido(request.apellido().trim());
         estudiante.setEmail(email);
         if (request.password() != null && !request.password().isBlank()) {
+            validarLargoPassword(request.password());
             estudiante.setPassword(passwordEncoder.encode(request.password()));
         }
         estudiante.setAdaptaciones(adaptaciones);
@@ -128,7 +132,7 @@ public class EstudianteServiceImpl implements EstudianteService {
     }
 
     private Usuario buscarEstudianteActivo(Long id) {
-        return usuarioRepository.findByIdAndRolAndActivoTrue(id, Rol.ESTUDIANTE)
+        return usuarioRepository.buscarActivoConAdaptaciones(id, Rol.ESTUDIANTE)
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe un estudiante activo con el id [" + id + "]."));
     }
 
@@ -137,6 +141,12 @@ public class EstudianteServiceImpl implements EstudianteService {
         return reservas.stream()
                 .map(r -> "[" + r.getId() + "] " + r.getTurno().getMateria().getNombre() + " " + r.getTurno().getInicio().format(formato))
                 .collect(Collectors.joining(", "));
+    }
+
+    private void validarLargoPassword(String password) {
+        if (password.length() < LARGO_MINIMO_PASSWORD) {
+            throw new DatoInvalidoException("La contraseña debe tener al menos " + LARGO_MINIMO_PASSWORD + " caracteres.");
+        }
     }
 
     private String normalizarEmail(String email) {

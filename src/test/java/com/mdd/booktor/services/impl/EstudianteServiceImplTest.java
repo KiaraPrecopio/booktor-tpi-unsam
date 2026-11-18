@@ -108,6 +108,14 @@ class EstudianteServiceImplTest {
     }
 
     @Test
+    void crearConPasswordCortaLanza400() {
+        assertThrows(DatoInvalidoException.class,
+                () -> service.crear(new EstudianteRequest("Juan", "Pérez", "juan@mail.com", "corta", null)));
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
     void crearConEmailRepetidoLanza409() {
         when(usuarioRepository.existsByEmailIgnoreCase("juan@mail.com")).thenReturn(true);
 
@@ -146,7 +154,7 @@ class EstudianteServiceImplTest {
 
     @Test
     void buscarPorIdInexistenteLanza404() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(99L, Rol.ESTUDIANTE)).thenReturn(Optional.empty());
+        when(usuarioRepository.buscarActivoConAdaptaciones(99L, Rol.ESTUDIANTE)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> service.buscarPorId(99L));
     }
@@ -154,7 +162,7 @@ class EstudianteServiceImplTest {
     @Test
     void modificarSinPasswordConservaLaAnterior() {
         Usuario existente = estudianteExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan@mail.com", 1L)).thenReturn(false);
         when(usuarioRepository.save(existente)).thenReturn(existente);
 
@@ -168,7 +176,7 @@ class EstudianteServiceImplTest {
     @Test
     void modificarConPasswordLaEncripta() {
         Usuario existente = estudianteExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan@mail.com", 1L)).thenReturn(false);
         when(passwordEncoder.encode("nueva12345")).thenReturn("hash-nuevo");
         when(usuarioRepository.save(existente)).thenReturn(existente);
@@ -179,9 +187,34 @@ class EstudianteServiceImplTest {
     }
 
     @Test
+    void modificarConPasswordCortaLanza400() {
+        Usuario existente = estudianteExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan@mail.com", 1L)).thenReturn(false);
+
+        assertThrows(DatoInvalidoException.class,
+                () -> service.modificar(1L, new EstudianteRequest("Juan", "Pérez", "juan@mail.com", "corta", null)));
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void modificarConPasswordVaciaConservaLaAnterior() {
+        Usuario existente = estudianteExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan@mail.com", 1L)).thenReturn(false);
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, new EstudianteRequest("Juan", "Pérez", "juan@mail.com", "", null));
+
+        assertEquals("hash-anterior", existente.getPassword());
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
     void modificarManteniendoSuEmailFunciona() {
         Usuario existente = estudianteExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan@mail.com", 1L)).thenReturn(false);
         when(usuarioRepository.save(existente)).thenReturn(existente);
 
@@ -193,7 +226,7 @@ class EstudianteServiceImplTest {
 
     @Test
     void modificarConEmailDeOtroLanza409() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE))
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE))
                 .thenReturn(Optional.of(estudianteExistente()));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(true);
 
@@ -206,7 +239,7 @@ class EstudianteServiceImplTest {
     @Test
     void darDeBajaPoneActivoEnFalse() {
         Usuario existente = estudianteExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
 
         service.darDeBaja(1L);
 
@@ -220,7 +253,7 @@ class EstudianteServiceImplTest {
         Usuario tutor = new Usuario("Ana", "Gómez", "ana@mail.com", "hash", Rol.TUTOR, true);
         LocalDateTime inicio = LocalDateTime.of(2026, 11, 11, 14, 0);
         Turno turno = new Turno(tutor, new Materia("Matemática", null, true), inicio, inicio.plusHours(1), Modalidad.VIRTUAL, "https://meet.com/x", null);
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
         Reserva reserva = new Reserva(turno, existente, AHORA, null);
         ReflectionTestUtils.setField(reserva, "id", 5L);
         when(reservaRepository.buscarActivasFuturasDeEstudiante(1L, AHORA)).thenReturn(List.of(reserva));
@@ -234,7 +267,7 @@ class EstudianteServiceImplTest {
 
     @Test
     void darDeBajaInexistenteLanza404() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(99L, Rol.ESTUDIANTE)).thenReturn(Optional.empty());
+        when(usuarioRepository.buscarActivoConAdaptaciones(99L, Rol.ESTUDIANTE)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> service.darDeBaja(99L));
 
@@ -243,7 +276,7 @@ class EstudianteServiceImplTest {
 
     @Test
     void listarPideSoloEstudiantes() {
-        when(usuarioRepository.findByRolAndActivoTrue(Rol.ESTUDIANTE)).thenReturn(List.of(
+        when(usuarioRepository.buscarActivosConAdaptaciones(Rol.ESTUDIANTE)).thenReturn(List.of(
                 estudianteExistente(),
                 new Usuario("Ana", "Gómez", "ana@mail.com", "hash", Rol.ESTUDIANTE, true)));
 
@@ -251,6 +284,6 @@ class EstudianteServiceImplTest {
 
         assertEquals(2, respuesta.size());
         assertEquals("Ana", respuesta.get(1).nombre());
-        verify(usuarioRepository).findByRolAndActivoTrue(Rol.ESTUDIANTE);
+        verify(usuarioRepository).buscarActivosConAdaptaciones(Rol.ESTUDIANTE);
     }
 }

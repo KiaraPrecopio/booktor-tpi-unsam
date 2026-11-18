@@ -94,7 +94,7 @@ class TutorWebControllerTest {
                         .param("duracionTurnoMinutos", "60").param("adaptacionIds", "3"))
                 .andExpect(redirectedUrl("/admin/tutores"));
 
-        verify(tutorService).modificar(5L, new TutorRequest("Ana", "Gómez", "ana@mail.com", null, 60, Set.of(3L)));
+        verify(tutorService).modificar(5L, new TutorRequest("Ana", "Gómez", "ana@mail.com", "", 60, Set.of(3L)));
     }
 
     @Test

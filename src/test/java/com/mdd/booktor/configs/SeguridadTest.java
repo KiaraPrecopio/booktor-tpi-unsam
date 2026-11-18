@@ -151,6 +151,13 @@ class SeguridadTest {
     }
 
     @Test
+    void conLaCookieDeOtroRolSeMuestraElErrorDePermiso() throws Exception {
+        mockMvc.perform(get("/admin").cookie(new Cookie(JwtService.COOKIE, tokenDeTutor())))
+                .andExpect(status().isForbidden())
+                .andExpect(status().reason("No tenés permiso para entrar a esta página."));
+    }
+
+    @Test
     void conUnaCookieInvalidaSeBorraYVuelveAlLogin() throws Exception {
         mockMvc.perform(get("/tutor").cookie(new Cookie(JwtService.COOKIE, "inventado")))
                 .andExpect(redirectedUrl("/login"))

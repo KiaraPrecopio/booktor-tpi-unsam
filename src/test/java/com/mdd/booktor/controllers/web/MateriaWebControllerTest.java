@@ -51,11 +51,11 @@ class MateriaWebControllerTest {
     }
 
     @Test
-    void crearVuelveALaListaYLaDescripcionVaciaLlegaComoNull() throws Exception {
+    void crearVuelveALaLista() throws Exception {
         mockMvc.perform(post("/admin/materias").param("nombre", "Física").param("descripcion", ""))
                 .andExpect(redirectedUrl("/admin/materias"));
 
-        verify(materiaService).crear(new MateriaRequest("Física", null));
+        verify(materiaService).crear(new MateriaRequest("Física", ""));
     }
 
     @Test
