@@ -120,6 +120,25 @@ La primera vez, en `booktor_db > Tables` tienen que aparecer `DATABASECHANGELOG`
 
 Para correr las pruebas: `.\mvnw test`.
 
+#### 5. Datos de demo (opcional)
+Para cargar datos de ejemplo (materias, adaptaciones, tutores, estudiantes, turnos y reservas), agregar en el `.env`:
+```properties
+LIQUIBASE_CONTEXTS=demo
+```
+Al arrancar, Liquibase aplica el changeset `009-datos-demo`. Sin esa línea, la base queda solo con el administrador inicial. Los turnos se generan a partir del día en que se carga la base, así que siempre son futuros.
+
+Todos los usuarios de demo tienen la contraseña de prueba `Test1234` (no es una credencial real):
+
+| Rol | Email | Datos |
+|---|---|---|
+| Tutor | `tutor@booktor.com` | Lucía Fernández. Turnos de 60 min. Ofrece Material visual y Lectura fácil. |
+| Tutor | `tutor2@booktor.com` | Martín Gómez. Turnos de 45 min. Ofrece solo Subtítulos. |
+| Tutor | `tutor3@booktor.com` | Sofía Ruiz. Turnos de 30 min. Ofrece Material visual y Tiempo extendido. |
+| Estudiante | `estudiante@booktor.com` | Juan Pérez. Tiene reservas activas con Lucía y con Martín. |
+| Estudiante | `estudiante2@booktor.com` | Tomás Díaz. Tiene una reserva activa con Sofía y una cancelada con Lucía. |
+
+Para volver a cargar los datos de demo hay que vaciar la base, porque Liquibase aplica cada changeset una sola vez.
+
 ## 🤝 Convenciones del equipo
 
 ### Ramas

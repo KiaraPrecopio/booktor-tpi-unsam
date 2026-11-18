@@ -74,4 +74,4 @@ Los lineamientos técnicos del TPI no se repiten acá. Esta sección lista solo 
   - los textos son claros: los botones dicen la acción ("Reservar turno") y los errores explican qué corregir.
 
 ### Desempeño
-- **RNF-09.** Las búsquedas y listados responden en menos de 3 segundos con los datos de prueba de la demo. *(Valor a confirmar por el equipo.)*
+- **RNF-09.** Las búsquedas y listados responden en menos de 3 segundos con los datos de prueba de la demo (`context:demo`). Medido el 17/11/2026 con la API corriendo en local y SQL Server: el endpoint más lento (`GET /api/reservas/mis-reservas`) tardó 0,06 s.
