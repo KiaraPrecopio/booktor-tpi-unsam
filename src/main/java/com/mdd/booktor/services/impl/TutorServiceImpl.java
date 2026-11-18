@@ -33,6 +33,8 @@ import com.mdd.booktor.utils.TutorMapper;
 @Service
 public class TutorServiceImpl implements TutorService {
 
+    private static final int LARGO_MINIMO_PASSWORD = 8;
+
     private final UsuarioRepository usuarioRepository;
     private final AdaptacionRepository adaptacionRepository;
     private final PasswordEncoder passwordEncoder;
@@ -53,7 +55,7 @@ public class TutorServiceImpl implements TutorService {
     @Override
     @Transactional(readOnly = true)
     public List<TutorResponse> listar() {
-        return usuarioRepository.findByRolAndActivoTrue(Rol.TUTOR).stream()
+        return usuarioRepository.buscarActivosConAdaptaciones(Rol.TUTOR).stream()
                 .map(TutorMapper::toResponse)
                 .toList();
     }
@@ -70,6 +72,7 @@ public class TutorServiceImpl implements TutorService {
         if (request.password() == null || request.password().isBlank()) {
             throw new DatoInvalidoException("La contraseña es obligatoria para dar de alta un tutor.");
         }
+        validarLargoPassword(request.password());
 
         String email = normalizarEmail(request.email());
         if (usuarioRepository.existsByEmailIgnoreCase(email)) {
@@ -113,6 +116,7 @@ public class TutorServiceImpl implements TutorService {
         tutor.setApellido(request.apellido().trim());
         tutor.setEmail(email);
         if (request.password() != null && !request.password().isBlank()) {
+            validarLargoPassword(request.password());
             tutor.setPassword(passwordEncoder.encode(request.password()));
         }
         tutor.setDuracionTurnoMinutos(request.duracionTurnoMinutos());
@@ -137,7 +141,7 @@ public class TutorServiceImpl implements TutorService {
     }
 
     private Usuario buscarTutorActivo(Long id) {
-        return usuarioRepository.findByIdAndRolAndActivoTrue(id, Rol.TUTOR)
+        return usuarioRepository.buscarActivoConAdaptaciones(id, Rol.TUTOR)
             .orElseThrow(() -> new RecursoNoEncontradoException("No existe un tutor activo con el id [" + id + "]."));
     }
 
@@ -146,6 +150,12 @@ public class TutorServiceImpl implements TutorService {
         return reservas.stream()
                 .map(r -> "[" + r.getId() + "] " + r.getTurno().getMateria().getNombre() + " " + r.getTurno().getInicio().format(formato))
                 .collect(Collectors.joining(", "));
+    }
+
+    private void validarLargoPassword(String password) {
+        if (password.length() < LARGO_MINIMO_PASSWORD) {
+            throw new DatoInvalidoException("La contraseña debe tener al menos " + LARGO_MINIMO_PASSWORD + " caracteres.");
+        }
     }
 
     private String normalizarEmail(String email) {

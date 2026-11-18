@@ -28,7 +28,6 @@ import com.mdd.booktor.services.TurnoService;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -101,7 +100,7 @@ class PanelTutorControllerTest {
         assertEquals(LocalDate.of(2026, 11, 20), request.getValue().fecha());
         assertEquals(LocalTime.of(14, 0), request.getValue().horaDesde());
         assertEquals(Modalidad.VIRTUAL, request.getValue().modalidad());
-        assertNull(request.getValue().lugar());
+        assertEquals("", request.getValue().lugar());
     }
 
     @Test
