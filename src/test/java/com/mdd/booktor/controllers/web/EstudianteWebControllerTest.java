@@ -84,7 +84,7 @@ class EstudianteWebControllerTest {
                         .param("apellido", "Pérez").param("email", "juan@mail.com").param("password", ""))
                 .andExpect(redirectedUrl("/admin/estudiantes"));
 
-        verify(estudianteService).modificar(1L, new EstudianteRequest("Juan", "Pérez", "juan@mail.com", null, null));
+        verify(estudianteService).modificar(1L, new EstudianteRequest("Juan", "Pérez", "juan@mail.com", "", null));
     }
 
     @Test

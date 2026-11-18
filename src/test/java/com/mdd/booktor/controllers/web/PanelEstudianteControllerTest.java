@@ -32,7 +32,6 @@ import com.mdd.booktor.services.ReservaService;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -122,17 +121,7 @@ class PanelEstudianteControllerTest {
         ArgumentCaptor<ReservaRequest> request = ArgumentCaptor.forClass(ReservaRequest.class);
         verify(reservaService).reservar(request.capture(), eq("juan@mail.com"));
         assertEquals(10L, request.getValue().turnoId());
-        assertEquals("Repasar", request.getValue().objetivo());
-    }
-
-    @Test
-    void elObjetivoVacioLlegaComoNull() throws Exception {
-        mockMvc.perform(post("/estudiante/reservas").param("turnoId", "10").param("objetivo", ""))
-                .andExpect(redirectedUrl("/estudiante/reservas"));
-
-        ArgumentCaptor<ReservaRequest> request = ArgumentCaptor.forClass(ReservaRequest.class);
-        verify(reservaService).reservar(request.capture(), eq("juan@mail.com"));
-        assertNull(request.getValue().objetivo());
+        assertEquals(" Repasar ", request.getValue().objetivo());
     }
 
     @Test

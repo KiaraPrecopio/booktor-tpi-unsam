@@ -125,6 +125,14 @@ class TutorServiceImplTest {
     }
 
     @Test
+    void crearConPasswordCortaLanza400() {
+        assertThrows(DatoInvalidoException.class,
+                () -> service.crear(request("ana@mail.com", "corta", 60, IDS)));
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
     void crearConEmailRepetidoLanza409() {
         when(usuarioRepository.existsByEmailIgnoreCase("ana@mail.com")).thenReturn(true);
 
@@ -150,7 +158,7 @@ class TutorServiceImplTest {
 
     @Test
     void buscarPorIdInexistenteLanza404() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(99L, Rol.TUTOR)).thenReturn(Optional.empty());
+        when(usuarioRepository.buscarActivoConAdaptaciones(99L, Rol.TUTOR)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> service.buscarPorId(99L));
     }
@@ -158,7 +166,7 @@ class TutorServiceImplTest {
     @Test
     void modificarCambiaDuracionYConservaPasswordSiNoSeEnvia() {
         Usuario existente = tutorExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
         adaptacionesActivas();
         when(usuarioRepository.save(existente)).thenReturn(existente);
@@ -174,7 +182,7 @@ class TutorServiceImplTest {
     @Test
     void modificarConPasswordLaEncripta() {
         Usuario existente = tutorExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
         adaptacionesActivas();
         when(passwordEncoder.encode("nueva12345")).thenReturn("hash-nuevo");
@@ -186,8 +194,21 @@ class TutorServiceImplTest {
     }
 
     @Test
+    void modificarConPasswordCortaLanza400() {
+        Usuario existente = tutorExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
+        adaptacionesActivas();
+
+        assertThrows(DatoInvalidoException.class,
+                () -> service.modificar(1L, request("ana@mail.com", "corta", 60, IDS)));
+
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
     void modificarConEmailDeOtroLanza409() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(tutorExistente()));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(tutorExistente()));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("otro@mail.com", 1L)).thenReturn(true);
 
         assertThrows(ConflictoException.class,
@@ -199,7 +220,7 @@ class TutorServiceImplTest {
     @Test
     void darDeBajaPoneActivoEnFalse() {
         Usuario existente = tutorExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
 
         service.darDeBaja(1L);
 
@@ -209,7 +230,7 @@ class TutorServiceImplTest {
 
     @Test
     void modificarDuracionConTurnosAsignadosLanza409() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(tutorExistente()));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(tutorExistente()));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
         when(turnoRepository.existsByTutor_IdAndEstadoAndInicioAfter(1L, EstadoTurno.ASIGNADO, AHORA)).thenReturn(true);
 
@@ -221,7 +242,7 @@ class TutorServiceImplTest {
     @Test
     void modificarSinCambiarLaDuracionNoRevisaLosTurnos() {
         Usuario existente = tutorExistente();
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
         when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
         adaptacionesActivas();
         when(usuarioRepository.save(existente)).thenReturn(existente);
@@ -237,7 +258,7 @@ class TutorServiceImplTest {
         Usuario estudiante = new Usuario("Juan", "Pérez", "juan@mail.com", "hash", Rol.ESTUDIANTE, true);
         LocalDateTime inicio = LocalDateTime.of(2026, 11, 11, 14, 0);
         Turno turno = new Turno(existente, new Materia("Matemática", null, true), inicio, inicio.plusHours(1), Modalidad.VIRTUAL, "https://meet.com/x", null);
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
         when(reservaRepository.buscarActivasFuturasDeTutor(1L, AHORA))
                 .thenReturn(List.of(new Reserva(turno, estudiante, AHORA, null)));
 
@@ -250,7 +271,7 @@ class TutorServiceImplTest {
 
     @Test
     void darDeBajaInexistenteLanza404() {
-        when(usuarioRepository.findByIdAndRolAndActivoTrue(99L, Rol.TUTOR)).thenReturn(Optional.empty());
+        when(usuarioRepository.buscarActivoConAdaptaciones(99L, Rol.TUTOR)).thenReturn(Optional.empty());
 
         assertThrows(RecursoNoEncontradoException.class, () -> service.darDeBaja(99L));
 
@@ -259,12 +280,12 @@ class TutorServiceImplTest {
 
     @Test
     void listarPideSoloTutores() {
-        when(usuarioRepository.findByRolAndActivoTrue(Rol.TUTOR)).thenReturn(List.of(tutorExistente()));
+        when(usuarioRepository.buscarActivosConAdaptaciones(Rol.TUTOR)).thenReturn(List.of(tutorExistente()));
 
         List<TutorResponse> respuesta = service.listar();
 
         assertEquals(1, respuesta.size());
         assertEquals(60, respuesta.get(0).duracionTurnoMinutos());
-        verify(usuarioRepository).findByRolAndActivoTrue(Rol.TUTOR);
+        verify(usuarioRepository).buscarActivosConAdaptaciones(Rol.TUTOR);
     }
 }
