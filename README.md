@@ -106,9 +106,13 @@ Las credenciales no se guardan en el repositorio. Copiar `.env.example` como `.e
 DB_URL=jdbc:sqlserver://localhost:1433;databaseName=booktor_db;encrypt=false;trustServerCertificate=true
 DB_USERNAME=booktor
 DB_PASSWORD=<contraseña>
+ADMIN_EMAIL=admin@booktor.com
+ADMIN_PASSWORD_HASH=$2a$12$Pyo.NCNZ/GrP32S6uRQONOXQoIy/p/iAqgboS9nHMnJv44R98RT7O
 JWT_SECRET=<texto aleatorio de al menos 32 caracteres>
 ```
 `DB_URL` va en una sola línea, sin espacios. El `.env` está en el `.gitignore`.
+
+`ADMIN_EMAIL` y `ADMIN_PASSWORD_HASH` son los datos del administrador inicial, que Liquibase crea la primera vez que arranca la aplicación. La contraseña no se guarda en texto plano, sino su hash BCrypt. El hash del ejemplo corresponde a la contraseña de prueba `Admin1234`, así que el administrador entra con `admin@booktor.com` / `Admin1234`. Es una credencial de prueba: en un entorno real se reemplaza por el hash de una contraseña propia.
 
 `JWT_SECRET` es la clave con la que se firman los tokens de inicio de sesión. Cada integrante inventa la suya: sin esa variable la aplicación no arranca. Si se cambia, los tokens emitidos con la clave anterior dejan de ser válidos.
 
@@ -128,7 +132,7 @@ Para cargar datos de ejemplo (materias, adaptaciones, tutores, estudiantes, turn
 ```properties
 LIQUIBASE_CONTEXTS=demo
 ```
-Al arrancar, Liquibase aplica el changeset `009-datos-demo`. Sin esa línea, la base queda solo con el administrador inicial. Los turnos se generan a partir del día en que se carga la base, así que siempre son futuros.
+Al arrancar, Liquibase aplica el changeset `007-datos-demo`. Sin esa línea, la base queda solo con el administrador inicial. Los turnos se generan a partir del día en que se carga la base, así que siempre son futuros.
 
 Todos los usuarios de demo tienen la contraseña de prueba `Test1234` (no es una credencial real):
 
@@ -153,7 +157,7 @@ La aplicación no guarda sesiones en el servidor: cada pedido trae un token JWT 
    POST http://localhost:8080/api/auth/login
    Content-Type: application/json
 
-   { "email": "mail@booktor.com", "password": "Password1234" }
+   { "email": "tutor@booktor.com", "password": "Test1234" }
    ```
    Respuesta: `{ "token": "eyJ...", "tipo": "Bearer" }`.
 2. Mandar el token en el resto de los pedidos:
@@ -168,6 +172,37 @@ La aplicación no guarda sesiones en el servidor: cada pedido trae un token JWT 
 | Email o contraseña incorrectos | 401 |
 | Sin token, o con un token vencido o alterado | 401 en la API; el navegador vuelve al login |
 | Token válido, pero de un rol que no corresponde | 403 |
+
+#### 7. Probar la API con Postman
+En [`docs/postman/`](docs/postman/) hay dos colecciones y un entorno:
+
+| Archivo | Para qué |
+|---|---|
+| `booktor.postman_collection.json` | Recorre toda la API con los tres roles: 55 pedidos, cada uno verifica su código de respuesta. |
+| `booktor-demo.postman_collection.json` | Tres pedidos para mostrar JWT con la tutora Lucía: login (200), sus turnos (200) y el ABML de tutores (403). Necesita los datos de demo. |
+| `booktor.postman_environment.json` | Entorno `Booktor local`: `baseUrl`, credenciales del administrador y la contraseña de prueba. |
+
+1. En Postman, **Import** y elegir los tres archivos.
+2. Seleccionar el entorno **Booktor local**. Ya trae el administrador de prueba (`admin@booktor.com` / `Admin1234`); si en el `.env` se usa otro, cambiar `admin_email` y `admin_password`.
+3. Con la aplicación levantada, abrir la colección y presionar **Run**.
+
+Cada pedido de login guarda el token en una variable de la colección, y el resto lo manda como `Authorization: Bearer`.
+
+La colección completa crea sus propios datos (nombres con "(prueba ...)" y emails `@postman.test`), así que se puede correr varias veces sobre la misma base. Las carpetas van en orden y conviene correrlas completas:
+
+| Carpeta | Qué prueba |
+|---|---|
+| 0. Autenticación | Login correcto, contraseña incorrecta (401), pedido sin token y con token alterado (401). |
+| 1. Administrador | ABML de materias, adaptaciones, tutores y estudiantes con sus validaciones (400, 404, 409), reservas activas y un 403. |
+| 2. Tutor | Generar un bloque de turnos, bloque superpuesto (409), virtual sin link (400), sus turnos y un 403. |
+| 3. Estudiante | Buscar con filtros, reservar con objetivo, reservar dos veces el mismo turno (409), cancelar y volver a reservar, y un 403. |
+| 4. Cancelaciones y bajas de turnos | Baja de un turno reservado (409), cancelación por el tutor y por el administrador, y baja de turnos libres. |
+| 5. Administrador: bajas | Baja de los datos creados por la colección. |
+
+También se puede correr desde la consola con [Postman CLI](https://learning.postman.com/docs/postman-cli/postman-cli-overview/):
+```bash
+postman collection run docs/postman/booktor.postman_collection.json -e docs/postman/booktor.postman_environment.json
+```
 
 ## 🤝 Convenciones del equipo
 
