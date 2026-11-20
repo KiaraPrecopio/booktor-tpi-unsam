@@ -169,4 +169,17 @@ class AdaptacionServiceImplTest {
         assertEquals(2, respuesta.size());
         assertEquals("Lectura fácil", respuesta.get(1).nombre());
     }
+
+    @Test
+    void modificarCambiaElNombreSinLosEspacios() {
+        // Agregado a partir del reporte de PIT: ningún test cambiaba el nombre al modificar.
+        Adaptacion existente = new Adaptacion("Material visual", "Imágenes", true);
+        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(repository.existsByNombreIgnoreCaseAndActivoTrueAndIdNot("Material gráfico", 1L)).thenReturn(false);
+        when(repository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, new AdaptacionRequest("  Material gráfico ", "Imágenes"));
+
+        assertEquals("Material gráfico", existente.getNombre());
+    }
 }

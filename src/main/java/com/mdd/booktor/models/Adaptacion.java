@@ -6,6 +6,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+/**
+ * Apoyo de accesibilidad que puede ofrecer un tutor, por ejemplo material visual o intérprete de lengua de señas.
+ * El estudiante filtra tutores por las adaptaciones que necesita. La baja es lógica ({@code activo = false}).
+ */
 @Entity
 public class Adaptacion {
     
@@ -22,9 +26,17 @@ public class Adaptacion {
     @Column(nullable = false)
     private boolean activo;
 
+    /** Constructor vacío que necesita JPA para crear la entidad al leerla de la base. */
     public Adaptacion() {
     }
     
+    /**
+     * Crea una adaptación.
+     *
+     * @param nombre nombre único entre las activas
+     * @param descripcion descripción opcional
+     * @param activo si está activa
+     */
     public Adaptacion(String nombre, String descripcion, boolean activo) {
         this.nombre = nombre;
         this.descripcion = descripcion;

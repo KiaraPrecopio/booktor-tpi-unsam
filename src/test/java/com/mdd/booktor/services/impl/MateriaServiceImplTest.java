@@ -186,4 +186,17 @@ class MateriaServiceImplTest {
         assertEquals(2, respuesta.size());
         assertEquals("Física", respuesta.get(1).nombre());
     }
+
+    @Test
+    void modificarCambiaElNombreSinLosEspacios() {
+        // Agregado a partir del reporte de PIT: ningún test cambiaba el nombre al modificar.
+        Materia existente = new Materia("Matemática", "Álgebra", true);
+        when(repository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(existente));
+        when(repository.existsByNombreIgnoreCaseAndActivoTrueAndIdNot("Matemática I", 1L)).thenReturn(false);
+        when(repository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, new MateriaRequest("  Matemática I ", "Álgebra"));
+
+        assertEquals("Matemática I", existente.getNombre());
+    }
 }

@@ -319,6 +319,17 @@ class ReservaServiceImplTest {
     }
 
     @Test
+    void cancelarConUsuarioInexistenteLanza404() {
+        // Agregado a partir del reporte de PIT: ningún test cubría un usuario inexistente al cancelar.
+        reservaActiva(turnoQueEmpieza(AHORA.plusDays(1)));
+        when(usuarioRepository.findByEmailIgnoreCaseAndActivoTrue("nadie@mail.com")).thenReturn(Optional.empty());
+
+        assertThrows(RecursoNoEncontradoException.class, () -> service.cancelar(10L, "nadie@mail.com"));
+
+        verify(reservaRepository, never()).save(any());
+    }
+
+    @Test
     void despuesDeCancelarOtroEstudiantePuedeReservarElMismoTurno() {
         Turno turno = turnoQueEmpieza(AHORA.plusDays(1));
         reservaActiva(turno);

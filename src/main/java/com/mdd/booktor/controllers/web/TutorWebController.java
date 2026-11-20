@@ -19,7 +19,11 @@ import com.mdd.booktor.services.TutorService;
 
 import jakarta.validation.Valid;
 
-// ABML de tutores para el administrador.
+/**
+ * Pantallas del ABML de tutores para el administrador ({@code /admin/tutores}).
+ * Usan el mismo service que la API; si el service rechaza una operación,
+ * {@link WebControllerAdvice} muestra la página de error.
+ */
 @Controller
 @RequestMapping("/admin/tutores")
 public class TutorWebController {
@@ -32,6 +36,7 @@ public class TutorWebController {
         this.adaptacionService = adaptacionService;
     }
 
+    /** Muestra la lista de tutores y el formulario de alta. */
     @GetMapping
     public String listar(Model model) {
         model.addAttribute("tutores", tutorService.listar());
@@ -39,12 +44,14 @@ public class TutorWebController {
         return "admin/tutores";
     }
 
+    /** Da de alta un tutor con los datos del formulario y vuelve a la lista. */
     @PostMapping
     public String crear(@Valid @ModelAttribute TutorRequest request) {
         tutorService.crear(request);
         return "redirect:/admin/tutores";
     }
 
+    /** Muestra el formulario de edición, con las adaptaciones que ya ofrece marcadas. */
     @GetMapping("/editar")
     public String editar(@RequestParam Long id, Model model) {
         TutorResponse tutor = tutorService.buscarPorId(id);
@@ -59,12 +66,14 @@ public class TutorWebController {
         return "admin/tutor-editar";
     }
 
+    /** Guarda los cambios y vuelve a la lista. */
     @PostMapping("/modificar")
     public String modificar(@RequestParam Long id, @Valid @ModelAttribute TutorRequest request) {
         tutorService.modificar(id, request);
         return "redirect:/admin/tutores";
     }
 
+    /** Da de baja lógica al tutor y vuelve a la lista. */
     @PostMapping("/baja")
     public String darDeBaja(@RequestParam Long id) {
         tutorService.darDeBaja(id);

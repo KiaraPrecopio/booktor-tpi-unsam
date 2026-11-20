@@ -14,6 +14,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 
+/**
+ * Usuario del sistema: administrador, tutor o estudiante, en una sola tabla con su {@link Rol}.
+ * La contraseña se guarda como hash BCrypt. La duración del turno solo la usan los tutores, y las adaptaciones
+ * son las que ofrece un tutor o las que necesita un estudiante. La baja es lógica ({@code activo = false}).
+ */
 @Entity
 public class Usuario {
 
@@ -50,9 +55,20 @@ public class Usuario {
     )
     private Set<Adaptacion> adaptaciones = new HashSet<>();
 
+    /** Constructor vacío que necesita JPA para crear la entidad al leerla de la base. */
     public Usuario() {
     }
 
+    /**
+     * Crea un usuario.
+     *
+     * @param nombre nombre
+     * @param apellido apellido
+     * @param email email, único en el sistema
+     * @param password hash BCrypt de la contraseña
+     * @param rol rol del usuario
+     * @param activo si está activo
+     */
     public Usuario(String nombre, String apellido, String email, String password, Rol rol, boolean activo) {
         this.nombre = nombre;
         this.apellido = apellido;

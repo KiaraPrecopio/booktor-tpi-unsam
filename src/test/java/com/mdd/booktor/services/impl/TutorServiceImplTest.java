@@ -24,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.mdd.booktor.dtos.TutorRequest;
 import com.mdd.booktor.dtos.TutorResponse;
@@ -259,12 +260,14 @@ class TutorServiceImplTest {
         LocalDateTime inicio = LocalDateTime.of(2026, 11, 11, 14, 0);
         Turno turno = new Turno(existente, new Materia("Matemática", null, true), inicio, inicio.plusHours(1), Modalidad.VIRTUAL, "https://meet.com/x", null);
         when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
-        when(reservaRepository.buscarActivasFuturasDeTutor(1L, AHORA))
-                .thenReturn(List.of(new Reserva(turno, estudiante, AHORA, null)));
+        Reserva reserva = new Reserva(turno, estudiante, AHORA, null);
+        ReflectionTestUtils.setField(reserva, "id", 5L);
+        when(reservaRepository.buscarActivasFuturasDeTutor(1L, AHORA)).thenReturn(List.of(reserva));
 
         ConflictoException ex = assertThrows(ConflictoException.class, () -> service.darDeBaja(1L));
 
-        assertTrue(ex.getMessage().startsWith("No se puede dar de baja al tutor"));
+        assertEquals("No se puede dar de baja al tutor, primero hay que cancelar las reservas activas de sus turnos: "
+                + "[5] Matemática 11/11/2026 14:00.", ex.getMessage());
         assertTrue(existente.isActivo());
         verify(usuarioRepository, never()).save(any());
     }
@@ -276,6 +279,48 @@ class TutorServiceImplTest {
         assertThrows(RecursoNoEncontradoException.class, () -> service.darDeBaja(99L));
 
         verify(usuarioRepository, never()).save(any());
+    }
+
+    // Agregados a partir del reporte de PIT: estos casos dejaban vivas mutaciones del service.
+
+    @Test
+    void buscarPorIdDevuelveElTutor() {
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(tutorExistente()));
+
+        TutorResponse respuesta = service.buscarPorId(1L);
+
+        assertEquals("ana@mail.com", respuesta.email());
+    }
+
+    @Test
+    void modificarActualizaNombreApellidoEmailYAdaptaciones() {
+        Usuario existente = tutorExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana.lopez@mail.com", 1L)).thenReturn(false);
+        adaptacionesActivas();
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, new TutorRequest(" Ana María ", " López ", " Ana.Lopez@Mail.com ", null, 60, IDS));
+
+        assertEquals("Ana María", existente.getNombre());
+        assertEquals("López", existente.getApellido());
+        assertEquals("ana.lopez@mail.com", existente.getEmail());
+        assertEquals(1, existente.getAdaptaciones().size());
+    }
+
+    @Test
+    void modificarConPasswordDeOchoCaracteresLaAcepta() {
+        // Caso límite: 8 caracteres es justo el mínimo permitido
+        Usuario existente = tutorExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.TUTOR)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("ana@mail.com", 1L)).thenReturn(false);
+        adaptacionesActivas();
+        when(passwordEncoder.encode("12345678")).thenReturn("hash-nuevo");
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, request("ana@mail.com", "12345678", 60, IDS));
+
+        assertEquals("hash-nuevo", existente.getPassword());
     }
 
     @Test

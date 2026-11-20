@@ -13,6 +13,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Reserva de un turno por parte de un estudiante, con el objetivo que quiere trabajar.
+ * Si se cancela, guarda quién la canceló y cuándo. Su estado cambia según {@link EstadoReserva}.
+ */
 @Entity
 public class Reserva {
 
@@ -44,9 +48,18 @@ public class Reserva {
 
     private LocalDateTime fechaCancelacion;
 
+    /** Constructor vacío que necesita JPA para crear la entidad al leerla de la base. */
     public Reserva() {
     }
 
+    /**
+     * Crea una reserva en estado ACTIVA.
+     *
+     * @param turno turno reservado
+     * @param estudiante estudiante que reserva
+     * @param fechaReserva momento en que se hizo la reserva
+     * @param objetivo qué quiere trabajar el estudiante, opcional
+     */
     public Reserva(Turno turno, Usuario estudiante, LocalDateTime fechaReserva, String objetivo) {
         this.turno = turno;
         this.estudiante = estudiante;

@@ -13,6 +13,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Horario que publica un tutor para una materia, virtual (con link) o presencial (con lugar).
+ * Se crea al generar un bloque y su estado cambia según {@link EstadoTurno}.
+ */
 @Entity
 public class Turno {
 
@@ -46,9 +50,21 @@ public class Turno {
 
     private String lugar;
 
+    /** Constructor vacío que necesita JPA para crear la entidad al leerla de la base. */
     public Turno() {
     }
 
+    /**
+     * Crea un turno en estado DISPONIBLE.
+     *
+     * @param tutor tutor que lo ofrece
+     * @param materia materia del turno
+     * @param inicio fecha y hora de inicio
+     * @param fin fecha y hora de fin
+     * @param modalidad virtual o presencial
+     * @param link link de la reunión, para los virtuales
+     * @param lugar lugar del encuentro, para los presenciales
+     */
     public Turno(Usuario tutor, Materia materia, LocalDateTime inicio, LocalDateTime fin, Modalidad modalidad, String link, String lugar) {
         this.tutor = tutor;
         this.materia = materia;

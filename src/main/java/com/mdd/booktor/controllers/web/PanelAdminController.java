@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.mdd.booktor.services.ReservaService;
 
-// Menú del administrador y reservas activas. Los ABML están en un controller por entidad.
+/**
+ * Menú del administrador y gestión de las reservas activas ({@code /admin}).
+ * Los ABML están en un controller por entidad.
+ */
 @Controller
 @RequestMapping("/admin")
 public class PanelAdminController {
@@ -22,17 +25,20 @@ public class PanelAdminController {
         this.reservaService = reservaService;
     }
 
+    /** Muestra el menú del administrador. */
     @GetMapping
     public String menu() {
         return "admin/menu";
     }
 
+    /** Muestra todas las reservas activas de turnos que no empezaron. */
     @GetMapping("/reservas")
     public String reservasActivas(Model model) {
         model.addAttribute("reservas", reservaService.listarActivasFuturas());
         return "admin/reservas";
     }
 
+    /** Cancela una reserva y vuelve a la lista. */
     @PostMapping("/reservas/cancelar")
     public String cancelar(@RequestParam Long reservaId, Principal principal) {
         reservaService.cancelar(reservaId, principal.getName());
