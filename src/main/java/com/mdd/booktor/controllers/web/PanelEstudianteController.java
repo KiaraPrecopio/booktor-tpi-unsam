@@ -21,7 +21,10 @@ import com.mdd.booktor.services.ReservaService;
 
 import jakarta.validation.Valid;
 
-// Pantallas del estudiante: buscar tutoría, reservar y ver o cancelar sus reservas.
+/**
+ * Pantallas del estudiante ({@code /estudiante}): buscar tutoría, reservar y ver o cancelar sus reservas.
+ * El estudiante se toma del token ({@link java.security.Principal}).
+ */
 @Controller
 @RequestMapping("/estudiante")
 public class PanelEstudianteController {
@@ -39,11 +42,13 @@ public class PanelEstudianteController {
         this.reservaService = reservaService;
     }
 
+    /** Muestra el menú del estudiante. */
     @GetMapping
     public String menu() {
         return "estudiante/menu";
     }
 
+    /** Busca materias con turnos disponibles por parte del nombre. */
     @GetMapping("/buscar")
     public String buscar(@RequestParam(required = false) String nombre, Model model) {
         model.addAttribute("materias", busquedaService.buscarMaterias(nombre));
@@ -51,6 +56,7 @@ public class PanelEstudianteController {
         return "estudiante/buscar";
     }
 
+    /** Muestra los tutores con turnos disponibles de una materia, filtrados por adaptaciones y modalidad. */
     @GetMapping("/tutores")
     public String tutores(@RequestParam Long materiaId, @RequestParam(required = false) Set<Long> adaptaciones,
             @RequestParam(required = false) Modalidad modalidad, Model model) {
@@ -63,18 +69,21 @@ public class PanelEstudianteController {
         return "estudiante/tutores";
     }
 
+    /** Reserva un turno con el objetivo opcional y va a Mis reservas. */
     @PostMapping("/reservas")
     public String reservar(@Valid @ModelAttribute ReservaRequest request, Principal principal) {
         reservaService.reservar(request, principal.getName());
         return "redirect:/estudiante/reservas";
     }
 
+    /** Muestra Mis reservas: las reservas activas y futuras, con el link o el lugar. */
     @GetMapping("/reservas")
     public String misReservas(Principal principal, Model model) {
         model.addAttribute("reservas", reservaService.listarProximasDeEstudiante(principal.getName()));
         return "estudiante/reservas";
     }
 
+    /** Cancela una reserva propia y vuelve a Mis reservas. */
     @PostMapping("/reservas/cancelar")
     public String cancelar(@RequestParam Long reservaId, Principal principal) {
         reservaService.cancelar(reservaId, principal.getName());

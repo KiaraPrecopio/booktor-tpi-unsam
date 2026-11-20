@@ -36,6 +36,10 @@ import com.mdd.booktor.repositories.UsuarioRepository;
 import com.mdd.booktor.services.TurnoService;
 import com.mdd.booktor.utils.TurnoMapper;
 
+/**
+ * Implementación de {@link com.mdd.booktor.services.TurnoService}: las reglas de cada operación
+ * están documentadas en la interfaz. Usa el reloj inyectable para las reglas que dependen de la hora.
+ */
 @Service
 public class TurnoServiceImpl implements TurnoService {
 

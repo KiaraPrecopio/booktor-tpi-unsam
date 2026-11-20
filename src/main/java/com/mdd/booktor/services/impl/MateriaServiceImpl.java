@@ -19,6 +19,10 @@ import com.mdd.booktor.repositories.TurnoRepository;
 import com.mdd.booktor.services.MateriaService;
 import com.mdd.booktor.utils.MateriaMapper;
 
+/**
+ * Implementación de {@link com.mdd.booktor.services.MateriaService}: las reglas de cada operación
+ * están documentadas en la interfaz. Usa el reloj inyectable para las reglas que dependen de la hora.
+ */
 @Service 
 public class MateriaServiceImpl implements MateriaService {
 

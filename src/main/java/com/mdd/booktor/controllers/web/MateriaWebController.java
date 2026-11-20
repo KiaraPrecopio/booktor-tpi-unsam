@@ -13,7 +13,11 @@ import com.mdd.booktor.services.MateriaService;
 
 import jakarta.validation.Valid;
 
-// ABML de materias para el administrador.
+/**
+ * Pantallas del ABML de materias para el administrador ({@code /admin/materias}).
+ * Usan el mismo service que la API; si el service rechaza una operación,
+ * {@link WebControllerAdvice} muestra la página de error.
+ */
 @Controller
 @RequestMapping("/admin/materias")
 public class MateriaWebController {
@@ -24,30 +28,35 @@ public class MateriaWebController {
         this.materiaService = materiaService;
     }
 
+    /** Muestra la lista de materias y el formulario de alta. */
     @GetMapping
     public String listar(Model model) {
         model.addAttribute("materias", materiaService.listar());
         return "admin/materias";
     }
 
+    /** Da de alta una materia con los datos del formulario y vuelve a la lista. */
     @PostMapping
     public String crear(@Valid @ModelAttribute MateriaRequest request) {
         materiaService.crear(request);
         return "redirect:/admin/materias";
     }
 
+    /** Muestra el formulario de edición. */
     @GetMapping("/editar")
     public String editar(@RequestParam Long id, Model model) {
         model.addAttribute("materia", materiaService.buscarPorId(id));
         return "admin/materia-editar";
     }
 
+    /** Guarda los cambios y vuelve a la lista. */
     @PostMapping("/modificar")
     public String modificar(@RequestParam Long id, @Valid @ModelAttribute MateriaRequest request) {
         materiaService.modificar(id, request);
         return "redirect:/admin/materias";
     }
 
+    /** Da de baja lógica la materia y vuelve a la lista. */
     @PostMapping("/baja")
     public String darDeBaja(@RequestParam Long id) {
         materiaService.darDeBaja(id);

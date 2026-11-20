@@ -20,7 +20,8 @@ Plataforma de agendamiento de tutorías académicas diseñada bajo los lineamien
 * **Vistas:** Thymeleaf
 * **Documentación de la API:** Swagger / OpenAPI (springdoc)
 * **Seguridad:** Spring Security con JWT (OAuth2 Resource Server)
-* **Pruebas:** JUnit 5, Mockito, MockMvc y JaCoCo
+* **Pruebas:** JUnit 5, Mockito, MockMvc, Cucumber, JaCoCo y PIT
+* **Documentación del código:** Javadoc
 * **Gestor de Dependencias:** Maven
 
 ## 🏗️ Arquitectura
@@ -128,6 +129,12 @@ La primera vez, en `booktor_db > Tables` tienen que aparecer `DATABASECHANGELOG`
 Para correr las pruebas: `.\mvnw test`. Para el reporte de cobertura de JaCoCo: `.\mvnw verify`, que lo genera en `target/site/jacoco/index.html`.
 
 Las pruebas usan objetos simulados (Mockito) y no tocan la base, salvo `BooktorApplicationTests`, que levanta la aplicación completa: necesita SQL Server y el `.env` configurados como en los pasos 2 y 3.
+
+| Herramienta | Qué hace | Comando | Resultado |
+|---|---|---|---|
+| Cucumber | Ejecuta los escenarios de `src/test/resources/features` escritos en Gherkin (Given / When / Then). Corre junto con el resto de las pruebas. | `.\mvnw test` | En la consola y en `target/cucumber-reports/cucumber.html` |
+| PIT | Mutation testing: modifica a propósito el código de `services.impl` y verifica que algún test falle. No corre en el build normal porque tarda. | `.\mvnw test-compile org.pitest:pitest-maven:mutationCoverage` | `target/pit-reports/index.html` |
+| Javadoc | Genera la documentación HTML del código. Todas las clases tienen Javadoc; las interfaces de `services` describen cada operación con sus reglas y excepciones. | `.\mvnw javadoc:javadoc` | `target/reports/apidocs/index.html` |
 
 #### 5. Datos de demo (opcional)
 Para cargar datos de ejemplo (materias, adaptaciones, tutores, estudiantes, turnos y reservas), agregar en el `.env`:

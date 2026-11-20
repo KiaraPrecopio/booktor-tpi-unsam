@@ -15,6 +15,10 @@ import com.mdd.booktor.services.JwtService;
 
 import jakarta.validation.Valid;
 
+/**
+ * API REST de inicio de sesión ({@code /api/auth}). Devuelve el token JWT que Postman y Swagger
+ * mandan después en el header {@code Authorization: Bearer}.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -27,7 +31,10 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
-    // Spring valida el email y la contraseña; si son incorrectos responde 401 (GlobalExceptionHandler).
+    /**
+     * Valida el email y la contraseña con Spring Security y responde 200 con el token.
+     * Si son incorrectos, {@link com.mdd.booktor.exceptions.GlobalExceptionHandler} responde 401.
+     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         Authentication autenticacion = authenticationManager.authenticate(
