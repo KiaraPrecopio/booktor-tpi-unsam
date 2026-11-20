@@ -24,6 +24,10 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Configura Spring Security: qué rol puede entrar a cada ruta, la autenticación con JWT
+ * (cookie en la web, header Authorization en la API) y las respuestas 401 y 403.
+ */
 @Configuration
 public class SecurityConfig {
 
@@ -31,6 +35,13 @@ public class SecurityConfig {
     private static final String TUTOR = Rol.TUTOR.name();
     private static final String ESTUDIANTE = Rol.ESTUDIANTE.name();
 
+    /**
+     * Define las reglas de acceso por rol y activa la verificación de tokens JWT, sin sesión en el servidor.
+     *
+     * @param http la configuración de seguridad HTTP
+     * @return la cadena de filtros de seguridad
+     * @throws Exception si la configuración falla
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -68,7 +79,13 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // El que valida email y contraseña (con UsuarioDetailsServiceImpl y BCrypt).
+    /**
+     * El que valida email y contraseña al iniciar sesión, con {@link com.mdd.booktor.services.impl.UsuarioDetailsServiceImpl} y BCrypt.
+     *
+     * @param configuration la configuración de autenticación de Spring
+     * @return el administrador de autenticación
+     * @throws Exception si no se puede obtener
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();

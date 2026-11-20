@@ -2,6 +2,7 @@ package com.mdd.booktor.models;
 
 import jakarta.persistence.*;
 
+/** Materia en la que se ofrecen tutorías. La baja es lógica ({@code activo = false}). */
 @Entity
 public class Materia {
     
@@ -16,10 +17,18 @@ public class Materia {
 
     private Boolean activo;
 
+    /** Constructor vacío que necesita JPA para crear la entidad al leerla de la base. */
     public Materia() {
 
     }
 
+    /**
+     * Crea una materia.
+     *
+     * @param nombre nombre único entre las activas
+     * @param descripcion descripción opcional
+     * @param activo si está activa
+     */
     public Materia(String nombre, String descripcion, Boolean activo) {
         this.nombre = nombre;
         this.descripcion = descripcion;

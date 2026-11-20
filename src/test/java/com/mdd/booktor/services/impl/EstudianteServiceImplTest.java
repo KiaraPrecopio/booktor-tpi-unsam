@@ -130,11 +130,15 @@ class EstudianteServiceImplTest {
     void crearConAdaptacionInexistenteLanza404() {
         Set<Long> ids = Set.of(1L, 99L);
         when(usuarioRepository.existsByEmailIgnoreCase("juan@mail.com")).thenReturn(false);
-        when(adaptacionRepository.findByIdInAndActivoTrue(ids))
-                .thenReturn(List.of(new Adaptacion("Material visual", null, true)));
+        Adaptacion encontrada = new Adaptacion("Material visual", null, true);
+        ReflectionTestUtils.setField(encontrada, "id", 1L);
+        when(adaptacionRepository.findByIdInAndActivoTrue(ids)).thenReturn(List.of(encontrada));
 
-        assertThrows(RecursoNoEncontradoException.class,
+        RecursoNoEncontradoException ex = assertThrows(RecursoNoEncontradoException.class,
                 () -> service.crear(new EstudianteRequest("Juan", "Pérez", "juan@mail.com", "secreta123", ids)));
+
+        // Informa solo el id que falta, no el que sí existe
+        assertEquals("No existen adaptaciones activas con los ids [99].", ex.getMessage());
 
         verify(usuarioRepository, never()).save(any());
     }
@@ -285,5 +289,47 @@ class EstudianteServiceImplTest {
         assertEquals(2, respuesta.size());
         assertEquals("Ana", respuesta.get(1).nombre());
         verify(usuarioRepository).buscarActivosConAdaptaciones(Rol.ESTUDIANTE);
+    }
+
+    // Agregados a partir del reporte de PIT: estos casos dejaban vivas mutaciones del service.
+
+    @Test
+    void buscarPorIdDevuelveElEstudiante() {
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(estudianteExistente()));
+
+        EstudianteResponse respuesta = service.buscarPorId(1L);
+
+        assertEquals("juan@mail.com", respuesta.email());
+    }
+
+    @Test
+    void modificarActualizaApellidoEmailYAdaptaciones() {
+        Set<Long> ids = Set.of(1L);
+        Usuario existente = estudianteExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan.gomez@mail.com", 1L)).thenReturn(false);
+        when(adaptacionRepository.findByIdInAndActivoTrue(ids))
+                .thenReturn(List.of(new Adaptacion("Material visual", null, true)));
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, new EstudianteRequest("Juan", " Gómez ", " Juan.Gomez@Mail.com ", null, ids));
+
+        assertEquals("Gómez", existente.getApellido());
+        assertEquals("juan.gomez@mail.com", existente.getEmail());
+        assertEquals(1, existente.getAdaptaciones().size());
+    }
+
+    @Test
+    void modificarConPasswordDeOchoCaracteresLaAcepta() {
+        // Caso límite: 8 caracteres es justo el mínimo permitido
+        Usuario existente = estudianteExistente();
+        when(usuarioRepository.buscarActivoConAdaptaciones(1L, Rol.ESTUDIANTE)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.existsByEmailIgnoreCaseAndIdNot("juan@mail.com", 1L)).thenReturn(false);
+        when(passwordEncoder.encode("12345678")).thenReturn("hash-nuevo");
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        service.modificar(1L, new EstudianteRequest("Juan", "Pérez", "juan@mail.com", "12345678", null));
+
+        assertEquals("hash-nuevo", existente.getPassword());
     }
 }

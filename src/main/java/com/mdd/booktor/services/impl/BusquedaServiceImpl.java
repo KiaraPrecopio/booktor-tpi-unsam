@@ -27,6 +27,10 @@ import com.mdd.booktor.services.BusquedaService;
 import com.mdd.booktor.utils.AdaptacionMapper;
 import com.mdd.booktor.utils.MateriaMapper;
 
+/**
+ * Implementación de {@link com.mdd.booktor.services.BusquedaService}: las reglas de cada operación
+ * están documentadas en la interfaz. Usa el reloj inyectable para las reglas que dependen de la hora.
+ */
 @Service
 public class BusquedaServiceImpl implements BusquedaService {
 

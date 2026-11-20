@@ -19,7 +19,11 @@ import com.mdd.booktor.services.EstudianteService;
 
 import jakarta.validation.Valid;
 
-// ABML de estudiantes para el administrador.
+/**
+ * Pantallas del ABML de estudiantes para el administrador ({@code /admin/estudiantes}).
+ * Usan el mismo service que la API; si el service rechaza una operación,
+ * {@link WebControllerAdvice} muestra la página de error.
+ */
 @Controller
 @RequestMapping("/admin/estudiantes")
 public class EstudianteWebController {
@@ -32,6 +36,7 @@ public class EstudianteWebController {
         this.adaptacionService = adaptacionService;
     }
 
+    /** Muestra la lista de estudiantes y el formulario de alta. */
     @GetMapping
     public String listar(Model model) {
         model.addAttribute("estudiantes", estudianteService.listar());
@@ -39,12 +44,14 @@ public class EstudianteWebController {
         return "admin/estudiantes";
     }
 
+    /** Da de alta un estudiante con los datos del formulario y vuelve a la lista. */
     @PostMapping
     public String crear(@Valid @ModelAttribute EstudianteRequest request) {
         estudianteService.crear(request);
         return "redirect:/admin/estudiantes";
     }
 
+    /** Muestra el formulario de edición, con las adaptaciones que ya tiene marcadas. */
     @GetMapping("/editar")
     public String editar(@RequestParam Long id, Model model) {
         EstudianteResponse estudiante = estudianteService.buscarPorId(id);
@@ -59,12 +66,14 @@ public class EstudianteWebController {
         return "admin/estudiante-editar";
     }
 
+    /** Guarda los cambios y vuelve a la lista. */
     @PostMapping("/modificar")
     public String modificar(@RequestParam Long id, @Valid @ModelAttribute EstudianteRequest request) {
         estudianteService.modificar(id, request);
         return "redirect:/admin/estudiantes";
     }
 
+    /** Da de baja lógica al estudiante y vuelve a la lista. */
     @PostMapping("/baja")
     public String darDeBaja(@RequestParam Long id) {
         estudianteService.darDeBaja(id);

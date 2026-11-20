@@ -30,6 +30,10 @@ import com.mdd.booktor.repositories.UsuarioRepository;
 import com.mdd.booktor.services.TutorService;
 import com.mdd.booktor.utils.TutorMapper;
 
+/**
+ * Implementación de {@link com.mdd.booktor.services.TutorService}: las reglas de cada operación
+ * están documentadas en la interfaz. Usa el reloj inyectable para las reglas que dependen de la hora.
+ */
 @Service
 public class TutorServiceImpl implements TutorService {
 

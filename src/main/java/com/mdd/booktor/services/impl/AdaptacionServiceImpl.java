@@ -18,6 +18,10 @@ import com.mdd.booktor.repositories.UsuarioRepository;
 import com.mdd.booktor.services.AdaptacionService;
 import com.mdd.booktor.utils.AdaptacionMapper;
 
+/**
+ * Implementación de {@link com.mdd.booktor.services.AdaptacionService}: las reglas de cada operación
+ * están documentadas en la interfaz.
+ */
 @Service
 public class AdaptacionServiceImpl implements AdaptacionService {
 

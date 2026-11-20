@@ -16,6 +16,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/** Pantallas de inicio de sesión y redirección al menú de cada rol. */
 @Controller
 public class InicioController {
 
@@ -27,12 +28,17 @@ public class InicioController {
         this.jwtService = jwtService;
     }
 
+    /** Muestra el formulario de inicio de sesión. */
     @GetMapping("/login")
     public String login() {
         return "login";
     }
 
-    // Mismo token que /api/auth/login, pero guardado en una cookie para que el navegador lo mande solo.
+    /**
+     * Valida el email y la contraseña y guarda el token JWT en una cookie HttpOnly y SameSite=Strict,
+     * para que el navegador lo mande solo. Es el mismo token que devuelve {@code /api/auth/login}.
+     * Si las credenciales son incorrectas, vuelve al login con un aviso.
+     */
     @PostMapping("/login")
     public String iniciarSesion(@RequestParam String email, @RequestParam String password,
             HttpServletResponse response) {
@@ -50,7 +56,7 @@ public class InicioController {
         }
     }
 
-    // Después de iniciar sesión, cada usuario va al menú de su rol.
+    /** Después de iniciar sesión, manda a cada usuario al menú de su rol. */
     @GetMapping("/")
     public String inicio(HttpServletRequest request) {
         if (request.isUserInRole(Rol.ADMINISTRADOR.name())) {
